@@ -51,3 +51,38 @@ teardown() {
   [ "$status" -eq 0 ]
   ! grep -q "SENTINELA" acme/CLAUDE.md
 }
+
+# Testes de wg-US-002: setup interativo pergunta dominios e mercado.
+
+@test "dominios respondidos com y ficam habilitados em settings.json" {
+  run bash -c "printf 'y\nn\ny\nn\nUS\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  run python3 -c "
+import json
+d = json.load(open('acme/.claude/settings.json'))['enabledPlugins']
+assert d == {'research': True, 'dados-mercado': True}, d
+"
+  [ "$status" -eq 0 ]
+}
+
+@test "nenhum dominio habilitado mantem enabledPlugins vazio" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  run python3 -c "
+import json
+d = json.load(open('acme/.claude/settings.json'))
+assert d['enabledPlugins'] == {}, d
+"
+  [ "$status" -eq 0 ]
+}
+
+@test "mercado escolhido fica registrado em portfolio.json" {
+  run bash -c "printf 'n\nn\nn\nn\nambos\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  run python3 -c "
+import json
+d = json.load(open('acme/portfolio.json'))
+assert d['mercado'] == 'ambos', d
+"
+  [ "$status" -eq 0 ]
+}
