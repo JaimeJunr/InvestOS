@@ -1,0 +1,17 @@
+# Ralph Progress Log
+Started: sáb 29 ago 2026 19:31:33 -03
+---
+
+## Codebase Patterns
+- Stack: bash puro (bin/*.sh), seguindo o precedente do repo irmao /mnt/xs1000/me/BizOS/bin/setup.sh. Decisao explicitamente deixada em aberto no PRD ("open question parked, resolvida na hora de codar") e resolvida por precedente direto.
+- Testes: bats (ja instalado em /usr/bin/bats). Padrao de teste: setup() cria WORKDIR via mktemp -d e cd nele; teardown() remove. Usar `run` do bats + assercoes com sentinela de conteudo (nao so status code) para evitar teste vacuous/fake-green.
+- shellcheck INDISPONIVEL neste ambiente (sem sudo/apt-get, bloqueado por security policy). GATE 3 (typecheck) substituido por `bash -n <script>` — documentar essa substituicao em cada story que gerar/editar shell script.
+- settings.json de portfolio gerado usa `"enabledPlugins": {}` (vazio) por padrao — dominios/mercado sao escolhidos na story wg-US-002, que deve popular esse campo.
+
+## 2026-08-29 - wg-US-001
+- Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
+- Arquivos: bin/setup.sh (novo), tests/setup.bats (novo, 5 casos).
+- Resolucao de ambiguidade de stack (Anti-Speculation Protocol): PRD (features/workspace-generator.html) marcava a escolha shell-script-vs-skill como "open question parked... decisao de implementacao, nao trava o PRD". Consultei o repo irmao BizOS (mesmo espirito citado na descricao do projeto) e segui o padrao ja estabelecido: bin/setup.sh em bash. Nao foi necessario bloquear a story.
+- GATE 1: tests passing (5/5) | GATE 2: lint clean (sem lint aplicavel a bash alem de bash -n; sem achados do qa-reviewer) | GATE 3: typecheck clean (bash -n, substituto de shellcheck indisponivel) | GATE 4: coverage n/a (bash/bats nao tem tooling de coverage configurado neste projeto) | GATE 5: committed at 9c6b686 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+- Learnings: shellcheck nao pode ser instalado neste ambiente (sudo bloqueado por security policy). Usar bash -n como gate substituto em stories futuras de shell script, e documentar a substituicao no proprio commit/progress.
+---
