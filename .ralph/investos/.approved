@@ -1,0 +1,20 @@
+approved_at: 2026-08-29T22:25:40Z
+approved_by: human
+current_tier: full
+current_prd_file: prd.html
+prd_sha256: 7215eb85dd909c0c4f99f53c888596f451d2cdc129220db22e4a967c72c75d67
+features_sha256: c2b7ab1c704ae803e24b1ca91a51d45c5a645b9e58fa73836514070cc3f2726c
+features:
+  - workspace-generator: reviewer_approved
+  - plugin-catalog: reviewer_approved
+  - market-data-research: reviewer_approved
+  - portfolio-risk: reviewer_approved
+  - broker-integration: reviewer_approved
+parked_open_questions:
+  - features/workspace-generator.html: "Escolha entre shell script (bin/setup.sh) e skill/slash command do Claude Code para o setup interativo — decisão de implementação, resolvida ao codar."
+  - features/plugin-catalog.html: "(none)"
+  - features/market-data-research.html: "Estrutura exata da watchlist de fundos (arquivo por portfólio? quantos fundos?) — detalhe de implementação, resolvido ao codar."
+  - features/portfolio-risk.html: "Valor default do threshold de desvio (ex.: 5%?) — fica configurável por portfólio, sem default fixo definido neste PRD; decidido ao implementar ou pelo próprio usuário no setup."
+  - features/broker-integration.html: "Qual provedor entra primeiro na implementação (Plaid vs. Interactive Brokers) — decisão de priorização de implementação, não trava o PRD; ambos estão no catálogo como opção."
+accepted_rc_fails:
+  - "(none)"

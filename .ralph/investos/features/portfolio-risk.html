@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Gestão de Portfólio e Risco — InvestOS</title>
+<style>
+:root {
+  --bg:#1a1a1a; --surface:#222; --surface-raised:#2a2a2a; --border:#333;
+  --text:#cfcfcf; --text-muted:#888; --text-bright:#f0f0f0; --accent:#7aa2f7;
+  --success:#73b87e; --warning:#e0a458; --danger:#e06060;
+  --po:#7aa2f7; --se:#b48ead; --parked:#e0a458; --answered:#73b87e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; font-size:14px; line-height:1.6; }
+.main { max-width:860px; margin:0 auto; padding:40px 48px 80px; }
+h1,h2,h3 { color:var(--text-bright); font-weight:600; line-height:1.3; }
+h1 { font-size:28px; margin-bottom:8px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+h2 { font-size:20px; margin:36px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+h3 { font-size:16px; margin:24px 0 10px; }
+p { margin:10px 0; }
+ul, ol { margin:10px 0 10px 24px; }
+li { margin:4px 0; }
+a { color:var(--accent); }
+code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--surface-raised); padding:1px 6px; border-radius:3px; color:var(--accent); }
+
+.user-story { margin:14px 0; padding:14px 16px; border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:6px; background:var(--surface); }
+.user-story > p:first-child { font-size:15px; color:var(--text-bright); font-weight:600; margin:0 0 8px; }
+.user-story .meta { list-style:none; margin:0 0 8px; font-size:12px; color:var(--text-muted); }
+.user-story .meta li { display:inline; margin-right:14px; }
+.user-story .ac { margin:8px 0 0 20px; }
+
+.open-questions { list-style:none; margin:10px 0; }
+.oq { display:flex; gap:10px; align-items:flex-start; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin:6px 0; }
+.pill { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.oq-answered .pill { background:#73b87e22; color:var(--answered); border:1px solid #73b87e55; }
+.oq-parked .pill   { background:#e0a45822; color:var(--parked);   border:1px solid #e0a45855; }
+
+.req-checklist { list-style:none; margin:10px 0; }
+.rc { padding:6px 12px; border-radius:0 6px 6px 0; margin:4px 0; font-size:13px; }
+.rc-fail { border-left:3px solid var(--danger); background:var(--surface); }
+.rc-pass { border-left:3px solid var(--success); background:var(--surface); }
+</style>
+</head>
+<body>
+<div class="main">
+<p><a href="../prd.html">← voltar ao Epic InvestOS</a></p>
+<h1>Gestão de Portfólio e Risco</h1>
+<p><em>Prioridade: P1. No v1, holdings entram manualmente (arquivo no portfólio) — integração automática de posição real fica pra depois, quando a feature Integração com Corretora/Banco existir.</em></p>
+
+<h2>User Stories</h2>
+<div class="user-story" id="US-001">
+  <p><strong>US-001</strong> — Como investidor, quero ver a alocação atual do meu portfólio (por classe de ativo/mercado) a partir das posições registradas, para saber se estou dentro da estratégia definida.</p>
+  <ul class="meta"><li>Blocked by: market-data-research US-001, US-002 (preços para valorizar posições)</li></ul>
+  <ul class="ac">
+    <li>AC: relatório de alocação atual vs. alocação-alvo definida pelo usuário.</li>
+    <li>AC: funciona com posições registradas manualmente (arquivo <code>holdings.json</code> no portfólio) já no v1, sem depender de integração de corretora.</li>
+  </ul>
+</div>
+<div class="user-story" id="US-002">
+  <p><strong>US-002</strong> — Como investidor, quero calcular métricas de risco (VaR, Sharpe, drawdown) sobre o histórico do portfólio, para entender o risco real da carteira, não só o retorno.</p>
+  <ul class="meta"><li>Blocked by: US-001</li></ul>
+  <ul class="ac">
+    <li>AC: VaR histórico, Sharpe ratio e max drawdown calculados a partir do histórico de preços disponível (BR via brapi/CVM, US/global via MCP do catálogo).</li>
+  </ul>
+</div>
+<div class="user-story" id="US-003">
+  <p><strong>US-003</strong> — Como investidor, quero receber uma sugestão de rebalanceamento quando a alocação atual desviar da alocação-alvo além de um limite configurável, para não deixar a carteira desviar sem perceber.</p>
+  <ul class="meta"><li>Blocked by: US-001</li></ul>
+  <ul class="ac">
+    <li>AC: sugestão de rebalanceamento (comprar/vender X para voltar ao alvo) gerada quando o desvio ultrapassa um threshold configurável por portfólio.</li>
+    <li>AC: a skill nunca executa ordem — só sugere (herda non-goal do epic).</li>
+  </ul>
+</div>
+
+<h2>Functional Requirements</h2>
+<ol>
+  <li>Holdings do portfólio registrados em arquivo próprio (<code>holdings.json</code>) dentro da pasta do portfólio — populado manualmente no v1.</li>
+  <li>Alocação-alvo configurável por portfólio, com threshold de desvio que dispara a sugestão de rebalanceamento.</li>
+  <li>Métricas de risco (VaR histórico, Sharpe, max drawdown) calculadas sobre o histórico de preços das posições.</li>
+  <li>Rebalanceamento é sempre sugestão textual/relatório — nunca execução de ordem.</li>
+  <li>Cálculos degradam graciosamente quando falta histórico de preço suficiente (ex.: ativo novo) — avisa a limitação em vez de travar ou inventar número.</li>
+</ol>
+
+<h2>Scope</h2>
+<p><strong>In:</strong> alocação atual vs. alvo, métricas de risco básicas (VaR/Sharpe/drawdown), sugestão de rebalanceamento em texto.</p>
+<p><strong>Out:</strong> execução de ordens; otimização avançada de portfólio (ex.: Markowitz) — candidato a <code>update</code> futura; holdings automáticos via corretora (isso é a feature Integração com Corretora/Banco, que substituiria o arquivo manual quando existir).</p>
+
+<h2>Dependencies</h2>
+<p>Dados de Mercado e Pesquisa (preços/histórico), Gerador de Workspace (estrutura). Complementável depois por Integração com Corretora/Banco.</p>
+
+<h3>Requirements Checklist</h3>
+<ul class="req-checklist">
+  <li class="rc rc-pass">Está definido como holdings entram no sistema no v1 (manual, não via corretora)?</li>
+  <li class="rc rc-pass">Está definido que rebalanceamento é sempre sugestão, nunca execução?</li>
+</ul>
+
+<h3>Feature-Local Open Questions</h3>
+<ul class="open-questions">
+  <li class="oq oq-parked"><span class="pill">parked</span> Valor default do threshold de desvio (ex.: 5%?) — fica configurável por portfólio, sem default fixo definido neste PRD; decidido ao implementar ou pelo próprio usuário no setup.</li>
+</ul>
+</div>
+</body>
+</html>

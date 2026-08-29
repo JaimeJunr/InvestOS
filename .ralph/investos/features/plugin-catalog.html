@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Catálogo de Plugins — InvestOS</title>
+<style>
+:root {
+  --bg:#1a1a1a; --surface:#222; --surface-raised:#2a2a2a; --border:#333;
+  --text:#cfcfcf; --text-muted:#888; --text-bright:#f0f0f0; --accent:#7aa2f7;
+  --success:#73b87e; --warning:#e0a458; --danger:#e06060;
+  --po:#7aa2f7; --se:#b48ead; --parked:#e0a458; --answered:#73b87e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; font-size:14px; line-height:1.6; }
+.main { max-width:860px; margin:0 auto; padding:40px 48px 80px; }
+h1,h2,h3 { color:var(--text-bright); font-weight:600; line-height:1.3; }
+h1 { font-size:28px; margin-bottom:8px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+h2 { font-size:20px; margin:36px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+h3 { font-size:16px; margin:24px 0 10px; }
+p { margin:10px 0; }
+ul, ol { margin:10px 0 10px 24px; }
+li { margin:4px 0; }
+a { color:var(--accent); }
+code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--surface-raised); padding:1px 6px; border-radius:3px; color:var(--accent); }
+table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
+th, td { padding:8px 12px; border:1px solid var(--border); text-align:left; }
+th { background:var(--surface-raised); color:var(--text-bright); font-weight:600; }
+
+.user-story { margin:14px 0; padding:14px 16px; border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:6px; background:var(--surface); }
+.user-story > p:first-child { font-size:15px; color:var(--text-bright); font-weight:600; margin:0 0 8px; }
+.user-story .meta { list-style:none; margin:0 0 8px; font-size:12px; color:var(--text-muted); }
+.user-story .meta li { display:inline; margin-right:14px; }
+.user-story .ac { margin:8px 0 0 20px; }
+
+.open-questions { list-style:none; margin:10px 0; }
+.oq { display:flex; gap:10px; align-items:flex-start; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin:6px 0; }
+.pill { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.oq-answered .pill { background:#73b87e22; color:var(--answered); border:1px solid #73b87e55; }
+.oq-parked .pill   { background:#e0a45822; color:var(--parked);   border:1px solid #e0a45855; }
+
+.req-checklist { list-style:none; margin:10px 0; }
+.rc { padding:6px 12px; border-radius:0 6px 6px 0; margin:4px 0; font-size:13px; }
+.rc-fail { border-left:3px solid var(--danger); background:var(--surface); }
+.rc-pass { border-left:3px solid var(--success); background:var(--surface); }
+</style>
+</head>
+<body>
+<div class="main">
+<p><a href="../prd.html">← voltar ao Epic InvestOS</a></p>
+<h1>Catálogo de Plugins</h1>
+<p><em>Prioridade: P0 — sem uma lista curada, o setup interativo (Gerador de Workspace) não tem o que oferecer.</em></p>
+
+<h2>User Stories</h2>
+<div class="user-story" id="US-001">
+  <p><strong>US-001</strong> — Como operador do InvestOS, quero uma lista central de plugins/skills/MCPs de investimento organizada por domínio, para escolher no setup sem pesquisar do zero toda vez.</p>
+  <ul class="meta"><li>Blocked by: (none)</li></ul>
+  <ul class="ac">
+    <li>AC: catálogo cobre os 4 domínios (research, risco/portfólio, dados de mercado, corretora/banco).</li>
+    <li>AC: cada entrada tem nome, repo/link, tipo (plugin/skill/agent/MCP), credencial exigida (sim/não).</li>
+  </ul>
+</div>
+<div class="user-story" id="US-002">
+  <p><strong>US-002</strong> — Como operador, quero que cada entrada declare se exige credencial/API key de terceiro, para decidir com informação se vale habilitar aquele domínio agora.</p>
+  <ul class="meta"><li>Blocked by: US-001</li></ul>
+  <ul class="ac">
+    <li>AC: entradas sem credencial (ex.: baseadas em yfinance público) ficam marcadas separadamente das que exigem (Plaid, Interactive Brokers, Alpha Vantage tier pago, CPZAI).</li>
+  </ul>
+</div>
+<div class="user-story" id="US-003">
+  <p><strong>US-003</strong> — Como operador, quero que o catálogo deixe explícito que hoje não existe MCP/skill curado equivalente para dados de mercado brasileiro (B3/fundos/ANBIMA), para não assumir cobertura que não existe.</p>
+  <ul class="meta"><li>Blocked by: US-001</li></ul>
+  <ul class="ac">
+    <li>AC: domínio "dados de mercado" registra o gap BR de forma visível (não omitido, não maquiado como "em breve").</li>
+  </ul>
+</div>
+
+<h2>Catálogo curado (research desta sessão)</h2>
+<table>
+<tr><th>Domínio</th><th>Entrada</th><th>Tipo</th><th>Credencial?</th></tr>
+<tr><td>Base (opcional)</td><td><code>anthropics/financial-services</code></td><td>plugin marketplace</td><td>Não (parcial — conectores pagos opcionais)</td></tr>
+<tr><td>Research/quant</td><td><code>tradermonty/claude-trading-skills</code>, <code>openalphalab/quant_investing_skills</code>, <code>acantrell0523/family-office</code></td><td>skills</td><td>Variável</td></tr>
+<tr><td>Dados de mercado (US/global)</td><td>Alpha Vantage MCP (oficial), <code>stock-scanner-mcp</code>, <code>financekit-mcp</code>, <code>himself65/finance-skills</code></td><td>MCP/skill</td><td>Sim (API key)</td></tr>
+<tr><td>Dados de mercado (BR)</td><td><em>gap — nenhum MCP/skill curado encontrado</em></td><td>—</td><td>—</td></tr>
+<tr><td>Corretora/banco</td><td><code>plaid-mcp</code>, <code>plaid-cli-mcp-server</code>, <code>ScientiaCapital/skills</code> (IBKR), <code>nkrvivek/traderkit</code></td><td>MCP</td><td>Sim (credenciais de conta real)</td></tr>
+</table>
+
+<h2>Functional Requirements</h2>
+<ol>
+  <li>Catálogo é um documento/config versionado (ex.: <code>catalog.json</code>) listando, por domínio, entradas com: nome, repo, tipo, credencial exigida (sim/não), disclaimer herdado (se o README de origem citar "não é recomendação de investimento").</li>
+  <li>Critério de entrada: repositório público, com <code>marketplace.json</code> válido (plugins) OU instalação documentada (skills/MCPs) — sem exigência de teste prévio de qualidade; é catálogo de research, não certificação.</li>
+  <li>Setup interativo (Gerador de Workspace) lê este catálogo para oferecer as opções por domínio escolhido.</li>
+  <li>Gap de dados de mercado BR é registrado explicitamente no catálogo, não omitido.</li>
+  <li>Atualização do catálogo é manual (curadoria humana), não scraping automático.</li>
+</ol>
+
+<h2>Scope</h2>
+<p><strong>In:</strong> lista curada e documentada por domínio, critério de entrada, registro explícito do gap BR.</p>
+<p><strong>Out:</strong> instalação automática dos plugins escolhidos (isso é do Gerador de Workspace consumindo o catálogo); validação de qualidade real de cada plugin além do README; busca automática de novos plugins.</p>
+
+<h2>Dependencies</h2>
+<p>Consumida por Gerador de Workspace (US-002 lá). Sem dependências próprias.</p>
+
+<h3>Requirements Checklist</h3>
+<ul class="req-checklist">
+  <li class="rc rc-pass">Está definido o critério mínimo de entrada no catálogo?</li>
+  <li class="rc rc-pass">Está definido como o gap de dados BR é comunicado ao usuário?</li>
+</ul>
+
+<h3>Feature-Local Open Questions</h3>
+<ul class="open-questions">
+  <li class="oq oq-answered"><span class="pill">answered</span> Critério de entrada no catálogo — repositório público com <code>marketplace.json</code> válido ou instalação documentada; sem exigência de teste prévio (herdado do Open Question parked do epic).</li>
+</ul>
+</div>
+</body>
+</html>

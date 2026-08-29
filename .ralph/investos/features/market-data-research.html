@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Dados de Mercado e Pesquisa — InvestOS</title>
+<style>
+:root {
+  --bg:#1a1a1a; --surface:#222; --surface-raised:#2a2a2a; --border:#333;
+  --text:#cfcfcf; --text-muted:#888; --text-bright:#f0f0f0; --accent:#7aa2f7;
+  --success:#73b87e; --warning:#e0a458; --danger:#e06060;
+  --po:#7aa2f7; --se:#b48ead; --parked:#e0a458; --answered:#73b87e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; font-size:14px; line-height:1.6; }
+.main { max-width:860px; margin:0 auto; padding:40px 48px 80px; }
+h1,h2,h3 { color:var(--text-bright); font-weight:600; line-height:1.3; }
+h1 { font-size:28px; margin-bottom:8px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+h2 { font-size:20px; margin:36px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+h3 { font-size:16px; margin:24px 0 10px; }
+p { margin:10px 0; }
+ul, ol { margin:10px 0 10px 24px; }
+li { margin:4px 0; }
+a { color:var(--accent); }
+code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--surface-raised); padding:1px 6px; border-radius:3px; color:var(--accent); }
+
+.user-story { margin:14px 0; padding:14px 16px; border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:6px; background:var(--surface); }
+.user-story > p:first-child { font-size:15px; color:var(--text-bright); font-weight:600; margin:0 0 8px; }
+.user-story .meta { list-style:none; margin:0 0 8px; font-size:12px; color:var(--text-muted); }
+.user-story .meta li { display:inline; margin-right:14px; }
+.user-story .ac { margin:8px 0 0 20px; }
+
+.open-questions { list-style:none; margin:10px 0; }
+.oq { display:flex; gap:10px; align-items:flex-start; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin:6px 0; }
+.pill { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.oq-answered .pill { background:#73b87e22; color:var(--answered); border:1px solid #73b87e55; }
+.oq-parked .pill   { background:#e0a45822; color:var(--parked);   border:1px solid #e0a45855; }
+
+.req-checklist { list-style:none; margin:10px 0; }
+.rc { padding:6px 12px; border-radius:0 6px 6px 0; margin:4px 0; font-size:13px; }
+.rc-fail { border-left:3px solid var(--danger); background:var(--surface); }
+.rc-pass { border-left:3px solid var(--success); background:var(--surface); }
+</style>
+</head>
+<body>
+<div class="main">
+<p><a href="../prd.html">← voltar ao Epic InvestOS</a></p>
+<h1>Dados de Mercado e Pesquisa</h1>
+<p><em>Prioridade: P1. Cobertura BR informada por <a href="../spikes/dados-mercado-br.md">spike de viabilidade</a> — sem plugin/MCP de terceiro pronto para BR, resolvido com implementação própria sobre brapi.dev + CVM Dados Abertos.</em></p>
+
+<h2>User Stories</h2>
+<div class="user-story" id="US-001">
+  <p><strong>US-001</strong> — Como investidor, quero consultar cotação e fundamentals de ativos US/global (ações, ETFs) via MCP do catálogo, para embasar research sem sair do Claude Code.</p>
+  <ul class="meta"><li>Blocked by: workspace-generator US-002, plugin-catalog US-001</li></ul>
+  <ul class="ac">
+    <li>AC: pelo menos 1 MCP do catálogo (ex.: Alpha Vantage) integrado e funcional quando domínio "dados de mercado" + mercado US/global estão habilitados no setup.</li>
+  </ul>
+</div>
+<div class="user-story" id="US-002">
+  <p><strong>US-002</strong> — Como investidor, quero consultar cotação de ações/ETFs/FIIs brasileiros via brapi.dev, para ter cobertura de mercado BR mesmo sem MCP de terceiro pronto.</p>
+  <ul class="meta"><li>Blocked by: workspace-generator</li></ul>
+  <ul class="ac">
+    <li>AC: client de brapi.dev integrado (free tier, 15.000 req/mês); cache local evita estourar a quota.</li>
+    <li>AC: funciona para os 4 tickers gratuitos (PETR4, VALE3, MGLU3, ITUB4) e para demais tickers com token de cadastro gratuito.</li>
+    <li>AC: fallback opcional via yfinance (<code>.SA</code>) documentado, sem quota garantida.</li>
+  </ul>
+</div>
+<div class="user-story" id="US-003">
+  <p><strong>US-003</strong> — Como investidor, quero consultar dados de fundos brasileiros (PL, cota, captação/resgate) via dados abertos da CVM, para research de fundos sem depender de contrato ANBIMA Feed.</p>
+  <ul class="meta"><li>Blocked by: US-002</li></ul>
+  <ul class="ac">
+    <li>AC: parser do Informe Diário de Fundos da CVM (<code>dados.cvm.gov.br</code>, CSV/ZIP) integrado, atualização batch diária.</li>
+    <li>AC: usuário informa o(s) fundo(s) de interesse (watchlist); parser filtra só esses no processamento diário.</li>
+  </ul>
+</div>
+<div class="user-story" id="US-004">
+  <p><strong>US-004</strong> — Como investidor, quero rodar skills de research (screener, fundamentals, comps, DCF simplificado) sobre os dados disponíveis, para decisão informada sem montar planilha manualmente.</p>
+  <ul class="meta"><li>Blocked by: US-001, US-002, US-003</li></ul>
+  <ul class="ac">
+    <li>AC: pelo menos 1 skill de research funcional por mercado habilitado (BR e/ou US, conforme setup).</li>
+  </ul>
+</div>
+
+<h2>Functional Requirements</h2>
+<ol>
+  <li>Client brapi.dev com cache local (evitar estourar 15.000 req/mês) e fallback yfinance <code>.SA</code> documentado.</li>
+  <li>Parser de CSV/ZIP do Informe Diário CVM, execução batch diária, filtrado pela watchlist de fundos do usuário.</li>
+  <li>Integração com pelo menos 1 MCP US/global do catálogo (ex.: Alpha Vantage) para research fora do Brasil.</li>
+  <li>Skills de research (screener, fundamentals, comps, DCF simplificado) habilitadas conforme domínio/mercado escolhido no setup.</li>
+  <li>Falha de dados (API fora do ar, rate limit atingido) degrada com mensagem clara — nunca trava silenciosamente nem retorna dado desatualizado sem avisar a idade do dado.</li>
+</ol>
+
+<h2>Scope</h2>
+<p><strong>In:</strong> brapi.dev + parser CVM (mercado BR), MCP US/global do catálogo, skills de research básicas, cache e tratamento de rate limit.</p>
+<p><strong>Out:</strong> dados em tempo real de alta frequência (tick-by-tick), execução de ordem, cripto/forex no v1, distribuição licenciada B3 (fora de alcance de projeto pessoal — ver spike).</p>
+
+<h3>Technical Considerations</h3>
+<p>brapi.dev exige cache local por causa da quota mensal; CVM é batch diário (nunca intraday) — ambos documentados em <a href="../spikes/dados-mercado-br.md">spikes/dados-mercado-br.md</a>.</p>
+
+<h2>Dependencies</h2>
+<p>Gerador de Workspace (estrutura/config), Catálogo de Plugins (MCP US/global), spike <code>dados-mercado-br.md</code> (evidência da fonte BR).</p>
+
+<h3>Requirements Checklist</h3>
+<ul class="req-checklist">
+  <li class="rc rc-pass">Está definida a fonte concreta de dados BR (ações e fundos), sem depender de plugin inexistente?</li>
+  <li class="rc rc-pass">Está definido o comportamento de degradação quando o dado falha ou a quota é atingida?</li>
+</ul>
+
+<h3>Feature-Local Open Questions</h3>
+<ul class="open-questions">
+  <li class="oq oq-parked"><span class="pill">parked</span> Estrutura exata da watchlist de fundos (arquivo por portfólio? quantos fundos?) — detalhe de implementação, resolvido ao codar.</li>
+</ul>
+</div>
+</body>
+</html>
