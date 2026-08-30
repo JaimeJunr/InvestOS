@@ -77,6 +77,7 @@ The practical consequence: every script that needs external market data or broke
 - `bin/risco.sh` — `RISCO_HISTORY`
 - `bin/alocacao.sh` — `ALOCACAO_QUOTE`
 - `bin/holdings-sync.sh` — `HOLDINGS_FETCH`
+- `bin/benchmark-quote.sh` — `BENCHMARK_QUOTE` for US (`^GSPC`); the documented yfinance fallback is non-official and has no guaranteed quota
 
 When the override is unset, these scripts fall back to the two BR data sources that *are* implemented directly (no MCP involved): `bin/brapi-quote.sh` (brapi.dev, for equities/ETFs/FIIs) and `bin/cvm-informe.sh` (CVM Dados Abertos CSV feed, for funds — a fund ticker is a 14-digit CNPJ, checked via `digits_only`/`is_cnpj` helpers). US/global data has no direct implementation; it only works through the injected override (i.e., through whatever consumes the declarative Alpha Vantage MCP config at runtime).
 

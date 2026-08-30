@@ -1,16 +1,46 @@
 #!/usr/bin/env bats
-# Testes de fh-US-003: benchmark BR via brapi.dev.
+# Testes de fh-US-003/fh-US-004: benchmarks BR e US.
 
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   SCRIPT="$ROOT/bin/benchmark-quote.sh"
   FAKE_HISTORY="$ROOT/tests/helpers/fake-brapi-history.sh"
+  FAKE_BENCHMARK="$ROOT/tests/helpers/fake-benchmark-quote.sh"
   WORKDIR="$(mktemp -d)"
   cd "$WORKDIR"
   export BRAPI_HTTP_GET="$FAKE_HISTORY"
   export BRAPI_FETCH_LOG="$WORKDIR/fetch.log"
   export BRAPI_NOW=1767225600
   : > "$BRAPI_FETCH_LOG"
+}
+
+@test "consulta S&P 500 via BENCHMARK_QUOTE injetado" {
+  seed_portfolio acme
+  export BENCHMARK_QUOTE="$FAKE_BENCHMARK"
+  export BENCHMARK_QUOTE_LOG="$WORKDIR/benchmark.log"
+  export BENCHMARK_QUOTE_PAYLOAD="$WORKDIR/gspc.json"
+  printf '%s\n' '{"results":[{"symbol":"^GSPC","historicalDataPrice":[{"date":1767225600,"close":5881.63}]}]}' > "$BENCHMARK_QUOTE_PAYLOAD"
+
+  run "$SCRIPT" acme us
+  [ "$status" -eq 0 ]
+  run jq -e '.results[0].symbol == "^GSPC" and (.results[0].historicalDataPrice | length) == 1' <<<"$output"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BENCHMARK_QUOTE_LOG")" = "acme ^GSPC us" ]
+}
+
+@test "mercado us sem BENCHMARK_QUOTE explica gap oficial e fallback nao-oficial" {
+  seed_portfolio acme
+  printf '%s\n' '{"mcpServers":{"alpha-vantage":{"type":"http"}}}' > acme/.mcp.json
+  unset BENCHMARK_QUOTE
+
+  run "$SCRIPT" acme us
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BENCHMARK_QUOTE"* ]]
+  [[ "$output" == *"nao ha fonte oficial gratuita"* ]]
+  [[ "$output" == *"yfinance ^GSPC"* ]]
+  [[ "$output" == *"nao-oficial"* ]]
+  [[ "$output" == *"sem quota garantida"* ]]
+  [ ! -s "$BRAPI_FETCH_LOG" ]
 }
 
 teardown() {
@@ -66,19 +96,19 @@ assert json.loads(sys.argv[1]) == json.loads(sys.argv[2])
   [ ! -e "acme/_cache/brapi/^BVSP-3mo-1d.json" ]
 }
 
-@test "mercado diferente de br e rejeitado sem consultar a API" {
+@test "mercado diferente de br ou us e rejeitado sem consultar a API" {
   seed_portfolio acme
 
-  run "$SCRIPT" acme us
+  run "$SCRIPT" acme eu
   [ "$status" -ne 0 ]
   [[ "$output" == *"Mercado invalido"* ]]
-  [[ "$output" == *"us"* ]]
-  [[ "$output" == *"br"* ]]
+  [[ "$output" == *"eu"* ]]
+  [[ "$output" == *"br|us"* ]]
   [ ! -s "$BRAPI_FETCH_LOG" ]
 }
 
 @test "sem slug e mercado exibe uso do contrato" {
   run "$SCRIPT"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"Uso: bin/benchmark-quote.sh <slug> br"* ]]
+  [[ "$output" == *"Uso: bin/benchmark-quote.sh <slug> <br|us>"* ]]
 }
