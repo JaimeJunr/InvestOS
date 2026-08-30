@@ -60,3 +60,8 @@
 [2026-08-29T23:26:29-03:00] pr-US-002 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
 [2026-08-29T23:35:06-03:00] pr-US-002 GATE 5 attempt 1: commit be368bb criado → PASS
 [2026-08-29T23:35:06-03:00] pr-US-002 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x MIN_PRICES/BRAPI_RANGE/CVM/historical_var, 0 survivors; tdr independente concordou); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS
+[2026-08-29T23:41:28-03:00] pr-US-003 RED: 7 tests written, all failing as expected
+[2026-08-29T23:43:15-03:00] pr-US-003 GATE 1 attempt 1: suite completa 65/65 → PASS
+[2026-08-29T23:43:15-03:00] pr-US-003 GATE 2 attempt 1: bash -n bin/rebalanceamento.sh bin/setup.sh (shellcheck indisponivel) → PASS
+[2026-08-29T23:43:15-03:00] pr-US-003 GATE 3 attempt 1: bash -n + python3 -m py_compile bin/rebalanceamento-report.py (substituto typecheck) → PASS
+[2026-08-29T23:43:15-03:00] pr-US-003 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold) → PASS

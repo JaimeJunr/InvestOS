@@ -108,6 +108,10 @@ if jq -e '.["research"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
     cp -r "$SKILLS_TEMPLATE/research-us" "$SLUG/.claude/skills/"
   fi
 fi
+if jq -e '.["risco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
+  mkdir -p "$SLUG/.claude/skills"
+  cp -r "$SKILLS_TEMPLATE/rebalanceamento" "$SLUG/.claude/skills/"
+fi
 
 cat > "$SLUG/.gitignore" <<'EOF'
 .env
