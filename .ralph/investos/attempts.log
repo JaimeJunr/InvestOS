@@ -37,3 +37,5 @@
 [2026-08-29T22:31:17-03:00] mdr-US-003 GATE 2 attempt 1: bash -n bin/cvm-informe.sh tests/helpers/fake-cvm-http.sh (substituto shellcheck) → PASS
 [2026-08-29T22:31:17-03:00] mdr-US-003 GATE 3 attempt 1: bash -n + python3 -m py_compile bin/cvm-informe-parse.py + jq empty catalog.json → PASS
 [2026-08-29T22:31:17-03:00] mdr-US-003 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
+[2026-08-29T22:39:57-03:00] mdr-US-003 GATE 5 attempt 1: commit 758bd9d criado → PASS
+[2026-08-29T22:39:57-03:00] mdr-US-003 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x + tdr independente AC1/AC2); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS

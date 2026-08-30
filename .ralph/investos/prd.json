@@ -197,7 +197,7 @@
       "blockedBy": ["mdr-US-002"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: market-data-research; validado por spikes/dados-mercado-br.md"
     },
     {
