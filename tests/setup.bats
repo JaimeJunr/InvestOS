@@ -118,7 +118,8 @@ assert d['mercado'] == 'ambos', d
   echo "SEGREDO-ACME" > acme/.env
   echo "MEMORIA-ACME" > acme/_memoria/nota.md
 
-  [ ! -e "beta/.env" ] || [ ! -s "beta/.env" ]
+  [ -f "beta/.env" ] && [ ! -s "beta/.env" ]
+  [ -d "beta/_memoria" ]
   ! grep -q "SEGREDO-ACME" "beta/.env" 2>/dev/null
   [ ! -e "beta/_memoria/nota.md" ]
 }
