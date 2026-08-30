@@ -25,3 +25,10 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Gotcha: com `set -euo pipefail`, os `read -r -p` novos precisam de `|| resp=""` — sem isso, EOF de stdin (comum em testes bats/CI sem input piped) mata o script no meio por causa do set -e. Documentar esse padrao para qualquer prompt interativo futuro em bin/*.sh.
 - GATE 1: tests passing (8/8) | GATE 2: lint clean | GATE 3: typecheck clean (bash -n) | GATE 4: coverage n/a | GATE 5: committed at 672812e | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine, provado por mutation testing manual nos 2 blocos novos; adherence: PASS via quati-revisor:qa-reviewer)
 ---
+
+## 2026-08-29 21:03 - wg-US-003
+- Implementado em bin/setup.sh: funcao slugify() (iconv translit + lowercase + sed hifenizando qualquer sequencia fora de [a-z0-9/-], colapsando hifens repetidos e removendo hifen nas pontas) roda sobre o argumento bruto ANTES de qualquer criacao de diretorio/arquivo. O resultado normalizado e validado contra ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$ mais checagem extra de "//" (".." e inalcancavel apos a normalizacao, pois "." nao sobrevive ao sed - ponto levantado pelo qa-reviewer como observacao nao-bloqueante, mantido por ser defensivo e barato). Rejeicao mostra o valor recebido original e o normalizado, alem do regex esperado.
+- Arquivos: bin/setup.sh (editado), tests/setup.bats (3 casos novos: normalizacao com espacos/maiusculas, normalizacao com acentos via translit, rejeicao pos-normalizacao com mensagem explicativa).
+- Resolucao de ambiguidade: nenhuma necessaria - AC era explicito sobre a normalizacao (slugify) e sobre a ordem (normaliza -> valida -> so rejeita se ainda violar).
+- GATE 1: tests passing (11/11) | GATE 2: lint clean (bash -n, shellcheck indisponivel no ambiente - sudo bloqueado, mesmo substituto documentado em wg-US-001/002) | GATE 3: typecheck clean (bash -n) | GATE 4: coverage n/a (bash/bats sem tooling de coverage) | GATE 5: committed at 42122be | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine, provado por mutation testing manual na funcao slugify; adherence: PASS via quati-revisor:qa-reviewer)
+---

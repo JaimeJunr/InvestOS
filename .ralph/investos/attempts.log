@@ -1,0 +1,5 @@
+[2026-08-30T00:01:04Z] wg-US-003 RED: 3 tests written, all failing as expected
+[2026-08-30T00:01:20Z] wg-US-003 GATE 1 attempt 1: implementou slugify+validacao regex → GREEN (11/11 passing) → PASS
+[2026-08-30T00:01:20Z] wg-US-003 GATE 2 attempt 1: bash -n bin/setup.sh (substituto shellcheck) → PASS
+[2026-08-30T00:01:20Z] wg-US-003 GATE 3 attempt 1: bash -n bin/setup.sh (substituto typecheck) → PASS
+[2026-08-30T00:02:53Z] wg-US-003 GATE 6 attempt 1: guarded-impl-loop mode=review-first → TDR validated=yes mechanism=genuine, aderencia PASS (qa-reviewer) → PASS
