@@ -81,3 +81,8 @@
 [2026-08-30T00:24:55-03:00] bi-US-002 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
 [2026-08-30T00:24:55-03:00] bi-US-002 GATE 5 attempt 1: commit 36d108a criado → PASS
 [2026-08-30T00:32:00-03:00] bi-US-002 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x process-env/print-value/source-env/empty-ok, 0 survivors; tdr independente reconfirmou h1); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 1 LOW) → PASS
+[2026-08-30T00:39:55-03:00] bi-US-003 RED: 4 tests written, all failing as expected (holdings-sync.sh ausente, exit 127)
+[2026-08-30T00:42:08-03:00] bi-US-003 GATE 1 attempt 1: suite completa 83/83 → PASS
+[2026-08-30T00:42:08-03:00] bi-US-003 GATE 2 attempt 1: bash -n bin/holdings-sync.sh tests/helpers/fake-plaid-holdings.sh (substituto shellcheck indisponivel) → PASS
+[2026-08-30T00:42:08-03:00] bi-US-003 GATE 3 attempt 1: bash -n + python3 -m py_compile + jq empty catalog.json → PASS
+[2026-08-30T00:42:08-03:00] bi-US-003 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
