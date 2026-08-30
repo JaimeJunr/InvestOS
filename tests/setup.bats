@@ -86,3 +86,25 @@ assert d['mercado'] == 'ambos', d
 "
   [ "$status" -eq 0 ]
 }
+
+# Testes de wg-US-003: slug normalizado e validado na criacao.
+
+@test "slug com espacos e maiusculas e normalizado (slugify) antes de criar a pasta" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' 'Meu Portfolio'"
+  [ "$status" -eq 0 ]
+  [ -d "meu-portfolio" ]
+  [ ! -d "Meu Portfolio" ]
+}
+
+@test "slug com acentos e normalizado (translit) antes de criar a pasta" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' 'Ações Tech'"
+  [ "$status" -eq 0 ]
+  [ -d "acoes-tech" ]
+}
+
+@test "slug que so vira invalido apos normalizacao e rejeitado com mensagem explicativa" {
+  run "$SCRIPT" "!!!"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"!!!"* ]]
+  [[ "$output" == *"^[a-z0-9]"* ]]
+}

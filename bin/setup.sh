@@ -8,10 +8,25 @@
 
 set -euo pipefail
 
-SLUG="${1:-}"
+slugify() {
+  local input="$1" slug
+  slug=$(printf '%s' "$input" | iconv -f utf8 -t ascii//TRANSLIT 2>/dev/null || printf '%s' "$input")
+  slug=$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]')
+  slug=$(printf '%s' "$slug" | sed -E 's/[^a-z0-9/-]+/-/g; s/-+/-/g; s/^-+//; s/-+$//')
+  printf '%s' "$slug"
+}
 
-if [ -z "$SLUG" ]; then
+RAW_SLUG="${1:-}"
+
+if [ -z "$RAW_SLUG" ]; then
   echo "Uso: bin/setup.sh <slug>" >&2
+  exit 1
+fi
+
+SLUG="$(slugify "$RAW_SLUG")"
+
+if [[ ! "$SLUG" =~ ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$ ]] || [[ "$SLUG" == *".."* ]] || [[ "$SLUG" == *"//"* ]]; then
+  echo "Slug invalido: recebido '$RAW_SLUG' (normalizado para '$SLUG'), esperado formato ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]\$, sem // nem .., max. 80 caracteres." >&2
   exit 1
 fi
 
