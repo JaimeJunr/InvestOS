@@ -22,6 +22,7 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Fallback de corretora (bi-US-003): `bin/holdings-sync.sh` decide pelo `has` (nunca `get`). Sem credencial = no-op no `holdings.json` (manual). Com credencial, fetch via seam `HOLDINGS_FETCH` (MCP Plaid e declarativo, sem client HTTP). Falha/token: `warn_stale` + exit 0, sidecar `<slug>/_cache/plaid/meta.json` `{fetchedAt}`, nunca grava `posicoes: []`. Fake nomeado: `tests/helpers/fake-plaid-holdings.sh`.
 - Snapshot de NAV (fh-US-001): `bin/nav-snapshot.sh` delega a valorizacao integralmente a `bin/alocacao.sh`, extrai `.total` e faz upsert atomico por data local em `<slug>/nav-historico.json` (`[{data, valorTotal}]`) via temporario + `mv`; nunca duplica a data atual e preserva snapshots de outras datas.
 - Log manual de transacoes (fh-US-002): `bin/transacao.sh <slug> registrar <tipo> <valor> [data]` faz append atomico em `<slug>/transacoes.json` (`[{data,tipo,valor}]`); tipo usa enum `aporte|resgate|compra|venda`, valor e numero positivo e data omitida usa o dia local.
+- Benchmark BR (fh-US-003): `bin/benchmark-quote.sh <slug> br` delega a `bin/brapi-quote.sh` com ticker `^BVSP`, `BRAPI_RANGE=3mo` e `BRAPI_INTERVAL=1d`; token, TTL e cache historico `<slug>/_cache/brapi/^BVSP-3mo-1d.json` permanecem responsabilidade do cliente brapi existente.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -236,4 +237,15 @@ Started: sáb 29 ago 2026 19:31:33 -03
   - TDRs provaram mecanismo genuino em 2 hipoteses (persistencia/data/tipos e rejeicoes); aderencia PASS.
   - Achados LOW nao-bloqueantes: data explicitamente vazia nao cai no default; guard de JSON corrompido nao tem teste; reviewer sugeriu comentario-cabecalho e futura extracao do bloco atomico. Nenhum altera AC atual.
 - GATE 1: tests passing (112/112) | GATE 2: lint clean (`git diff --check`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (sem tooling ou threshold) | GATE 5: committed at 672eb42 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+---
+
+## 2026-08-30 20:17:44 -0300 - fh-US-003
+- What was implemented: `bin/benchmark-quote.sh <slug> br` consulta o historico do Ibovespa ao delegar para `bin/brapi-quote.sh` com ticker `^BVSP`, range `3mo` e intervalo `1d`; preserva o mecanismo existente de token, TTL e cache e nao faz rede nos testes.
+- Files changed: `bin/benchmark-quote.sh`, `tests/benchmark.bats`, `.ralph/investos/attempts.log`, `.ralph/investos/prd.json`, `.ralph/investos/progress.txt`.
+- Resolution: lidos `CLAUDE.md`, `ivt-quality:backend-testing` e precedentes `bin/brapi-quote.sh`, `bin/risco.sh`, `tests/brapi.bats`, `tests/risco.bats`; `.claude/skills/` nao existe. Cursor Bridge mapeou precedentes e executou RED/GREEN; `quati-revisor:guarded-impl-loop` revisou em `review-first`.
+- Learnings for future iterations:
+  - Benchmark BR e um wrapper fino; cache/token continuam centralizados em `brapi-quote.sh`, evitando segundo cliente HTTP.
+  - RED: 4 testes falharam com o script ausente; GREEN e suite completa passaram sem rede real.
+  - GATE 6: TDR `validated=yes mechanism=genuine`; aderencia PASS. Dois LOW nao-bloqueantes ficam para backlog: argumento `BR` maiusculo nao e normalizado e o endpoint real com `^BVSP` cru nao foi provado contra a forma `%5EBVSP` do spike. O segundo nao foi alterado sem evidencia de rede, conforme anti-especulacao.
+- GATE 1: tests passing (116/116) | GATE 2: lint clean (`bash -n`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (sem tooling ou threshold) | GATE 5: committed at 0685d37 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
