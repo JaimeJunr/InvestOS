@@ -135,7 +135,7 @@
       ],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: plugin-catalog"
     },
     {
