@@ -8,3 +8,5 @@
 [2026-08-30T00:04:35Z] wg-US-004 GATE 2 attempt 1: bash -n bin/setup.sh (substituto shellcheck) → PASS
 [2026-08-30T00:04:35Z] wg-US-004 GATE 3 attempt 1: bash -n bin/setup.sh (substituto typecheck) → PASS
 [2026-08-30T00:06:58Z] wg-US-004 GATE 6 attempt 1: guarded-impl-loop mode=review-first -> TDR validated=yes mechanism=genuine (mutation testing manual em bin/setup.sh, revertida); aderencia PASS (qa-reviewer) com 2 LOW findings -> aplicado fix do LOW #1 (teste do AC1 era so-negativo/tautologico, reforcado com asserções positivas -f/-d); LOW #2 (slug com '/' permite portfolio aninhado) registrado como debito de backlog, fora do escopo desta story -> PASS
+[2026-08-29 21:08:07] pc-US-001 RED: 4 tests written, all failing as expected
+[2026-08-30 21:13:00] pc-US-001 GATE 6 attempt 1: TDR (tdr-runner, mutation testing 4x) -> genuine; aderencia (qa-reviewer) -> PASS com 2 findings LOW fora de escopo -> PASS
