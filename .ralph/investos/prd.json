@@ -321,7 +321,7 @@
       "blockedBy": ["bi-US-001"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: broker-integration"
     }
   ]
