@@ -250,7 +250,7 @@
       "blockedBy": ["pr-US-001"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: portfolio-risk"
     },
     {
