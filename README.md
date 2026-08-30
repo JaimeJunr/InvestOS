@@ -37,8 +37,8 @@ small businesses), but for personal investing.
 ```bash
 git clone https://github.com/JaimeJunr/InvestOS.git
 cd InvestOS
-bin/setup.sh my-portfolio
-cd my-portfolio && claude
+bin/setup.sh my-portfolio       # created outside this clone — default: ~/Documents/investos-my-portfolio
+cd ~/Documents/investos-my-portfolio && claude
 ```
 
 Then, inside Claude Code, run `/instalar` — a guided interview that sets up your positions,

@@ -185,7 +185,7 @@ assert report["executaOrdem"] is False, report
   grep -qi "nunca executa ordem" "$SKILL"
   grep -qi "so sugere" "$SKILL"
 
-  run bash -c "printf 'n\ny\nn\nn\nbr\n' | '$SETUP' acme"
+  run bash -c "printf 'n\ny\nn\nn\nbr\n' | '$SETUP' ./acme"
   [ "$status" -eq 0 ]
   [ -f "acme/.claude/skills/rebalanceamento/SKILL.md" ]
   grep -qi "nunca executa ordem" "acme/.claude/skills/rebalanceamento/SKILL.md"

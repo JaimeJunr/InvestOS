@@ -85,7 +85,7 @@ EOF
 }
 
 @test "setup nao grava a credencial preenchida em config; has nao vaza no output" {
-  printf 'n\nn\nn\ny\nbr\n' | "$SETUP" acme
+  printf 'n\nn\nn\ny\nbr\n' | "$SETUP" ./acme
   printf 'PLAID_CLIENT_ID=id-preenchido\nPLAID_SECRET=segredo-preenchido\n' > acme/.env
 
   run grep -R "segredo-preenchido" acme/.mcp.json acme/.claude/settings.json acme/portfolio.json acme/CLAUDE.md

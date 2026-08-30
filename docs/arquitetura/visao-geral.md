@@ -1,13 +1,15 @@
 # Visão geral de arquitetura
 
-InvestOS não tem servidor, daemon ou banco de dados. Cada portfólio é uma pasta autocontida
-gerada por `bin/setup.sh`, e cada operação é um script standalone invocado como
-`bin/<comando>.sh <slug>`.
+InvestOS não tem servidor, daemon ou banco de dados. Cada portfólio é uma pasta autocontida,
+gerada **fora** do clone do InvestOS (mesmo padrão do BizOS: nome puro vai pra
+`~/Documents/investos-<nome>`, caminho explícito é respeitado literalmente — ver
+[`instalacao/comecando.md`](../instalacao/comecando.md)), e cada operação é um script standalone
+invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 
 ## Estrutura de um portfólio
 
 ```
-<slug>/
+<portfolio>/
 ├── CLAUDE.md
 ├── _memoria/
 ├── .env                  # credenciais, gitignored

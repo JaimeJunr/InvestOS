@@ -38,8 +38,8 @@ pequenos negócios), mas para investimento pessoal.
 ```bash
 git clone https://github.com/JaimeJunr/InvestOS.git
 cd InvestOS
-bin/setup.sh minha-carteira
-cd minha-carteira && claude
+bin/setup.sh minha-carteira     # criado fora deste clone — default: ~/Documents/investos-minha-carteira
+cd ~/Documents/investos-minha-carteira && claude
 ```
 
 Dentro do Claude Code, rode `/instalar` — uma entrevista guiada que configura suas posições,

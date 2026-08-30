@@ -19,13 +19,26 @@ cd InvestOS
 bin/setup.sh minha-carteira
 ```
 
+O portfólio **não** é criado dentro da pasta do InvestOS — mesmo padrão do
+[BizOS](https://github.com/JaimeJunr/BizOS). Um nome puro (sem `/`) vira
+`~/Documents/investos-minha-carteira` (override via
+`INVESTOS_PORTFOLIOS_DIR=/outro/lugar bin/setup.sh minha-carteira`). Se preferir escolher o
+caminho exato, passe um caminho em vez de um nome — qualquer argumento que comece com `.`, `~` ou
+contenha `/` é respeitado literalmente:
+
+```bash
+bin/setup.sh ~/carteiras/pessoal       # cria em ~/carteiras/pessoal
+bin/setup.sh ./aqui-mesmo              # cria ./aqui-mesmo, relativo ao cwd atual
+```
+
 O setup pergunta, um por um:
 
 1. Habilitar cada domínio (`research`, `risco`, `dados-mercado`, `corretora-banco`) — `y`/`N`.
 2. Mercado: `br`, `us` ou `ambos` (case-insensitive, sem outra variação aceita).
 
-Ao final, `minha-carteira/` existe com a estrutura descrita em
-[`arquitetura/visao-geral.md`](../arquitetura/visao-geral.md).
+Ao final, o portfólio existe com a estrutura descrita em
+[`arquitetura/visao-geral.md`](../arquitetura/visao-geral.md), e o comando imprime o `cd` exato pra
+abrir o Claude Code lá dentro.
 
 ## Sendo guiado (`/instalar` e `/status`)
 

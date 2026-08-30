@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Creating a new portfolio
 
+Portfolios are created **outside** the InvestOS clone (same pattern as
+[BizOS](https://github.com/JaimeJunr/BizOS)):
+
 ```bash
-bin/setup.sh <slug>          # answers domains + market interactively, from the repo root
-cd <slug> && claude          # open Claude Code inside the freshly generated portfolio
+bin/setup.sh <name>          # answers domains + market interactively
+                              # bare name -> ${INVESTOS_PORTFOLIOS_DIR:-$HOME/Documents}/investos-<name>
+                              # an argument containing "/", or starting with "." or "~", is
+                              # treated as an explicit path instead
+cd <printed-path> && claude  # open Claude Code inside the freshly generated portfolio
 ```
 
 Then, inside the portfolio's Claude Code session, run `/instalar` — a guided interview that
@@ -50,12 +56,15 @@ InvestOS is a portfolio-workspace generator plus a handful of report scripts. Th
 
 ### Portfolio generation (`bin/setup.sh`)
 
-The entry point. Given a slug, it:
+The entry point. Given a name or path, it:
 
-1. Slugifies and validates the name (`^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$`, no `//` or `..`).
-2. Asks interactively which domains to enable (`research`, `risco`, `dados-mercado`, `corretora-banco`) and which market (`br`, `us`, `ambos` — this exact 3-value enum, case-insensitive, no synonym mapping).
-3. Writes an isolated portfolio folder: `CLAUDE.md`, `_memoria/`, `.env` (empty, gitignored), `.claude/settings.json` (`enabledPlugins`), `.claude/skills/` (copied from `templates/skills/`, chosen by domain+market), `.claude/commands/instalar.md` + `status.md` (copied from `templates/commands/`, always — see "Creating a new portfolio" above), `.mcp.json` (only when an MCP-backed domain is enabled), `portfolio.json` (`{"mercado": ...}`).
-4. Refuses to overwrite an existing portfolio without an explicit `y` confirmation.
+1. Resolves the target directory: a bare name (no `/`, not starting with `.` or `~`) goes under
+   `${INVESTOS_PORTFOLIOS_DIR:-$HOME/Documents}/investos-<slugified-name>`; an explicit path is
+   respected literally (dirname preserved, basename slugified), `~` expanded against `$HOME`.
+2. Slugifies and validates the name component (`^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$`, no `//` or `..`).
+3. Asks interactively which domains to enable (`research`, `risco`, `dados-mercado`, `corretora-banco`) and which market (`br`, `us`, `ambos` — this exact 3-value enum, case-insensitive, no synonym mapping).
+4. Writes an isolated portfolio folder: `CLAUDE.md`, `_memoria/`, `.env` (empty, gitignored), `.claude/settings.json` (`enabledPlugins`), `.claude/skills/` (copied from `templates/skills/`, chosen by domain+market), `.claude/commands/instalar.md` + `status.md` (copied from `templates/commands/`, always — see "Creating a new portfolio" above), `.mcp.json` (only when an MCP-backed domain is enabled), `portfolio.json` (`{"mercado": ...}`).
+5. Refuses to overwrite an existing portfolio without an explicit `y` confirmation.
 
 Two portfolios never share `_memoria/`, `.env`, or `.claude/settings.json` — each is fully self-contained.
 

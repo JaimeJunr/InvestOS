@@ -6,10 +6,13 @@
 
 ## O que faz
 
-`bin/setup.sh <slug>` cria uma pasta de portfólio nova, isolada, a partir de um setup interativo.
+`bin/setup.sh <nome-ou-caminho>` cria uma pasta de portfólio nova, isolada, **fora da pasta do
+InvestOS** (mesmo padrão do [BizOS](https://github.com/JaimeJunr/BizOS)), a partir de um setup
+interativo.
 
 ```bash
 bin/setup.sh minha-carteira
+# → cria em ~/Documents/investos-minha-carteira (override: INVESTOS_PORTFOLIOS_DIR=/outro/lugar)
 # Habilitar dominio 'research'? [y/N]
 # Habilitar dominio 'risco'? [y/N]
 # Habilitar dominio 'dados-mercado'? [y/N]
@@ -17,10 +20,14 @@ bin/setup.sh minha-carteira
 # Mercado (BR/US/ambos):
 ```
 
-O nome é normalizado automaticamente (`Meu Portfolio` vira `meu-portfolio`) e só é rejeitado se,
-mesmo após a normalização, ainda violar o formato de slug (minúsculas, números, hífen, até 80
-caracteres). Rodar o comando de novo sobre um portfólio existente pede confirmação explícita antes
-de sobrescrever — nada é perdido por acidente.
+Um argumento que contenha `/`, comece com `.` ou `~` é tratado como caminho explícito e respeitado
+literalmente (`bin/setup.sh ~/carteiras/pessoal`, `bin/setup.sh ./aqui-mesmo`) — sem o prefixo
+`investos-` nem a pasta base `~/Documents`.
+
+O nome (ou o último componente do caminho) é normalizado automaticamente (`Meu Portfolio` vira
+`meu-portfolio`) e só é rejeitado se, mesmo após a normalização, ainda violar o formato de slug
+(minúsculas, números, hífen, até 80 caracteres). Rodar o comando de novo sobre um portfólio
+existente pede confirmação explícita antes de sobrescrever — nada é perdido por acidente.
 
 ## O que é gerado
 

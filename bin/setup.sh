@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
-# Cria a estrutura padrao de um portfolio novo do InvestOS.
+# Cria a estrutura padrao de um portfolio novo do InvestOS, fora da pasta do
+# InvestOS (mesmo padrao do bin/setup.sh do BizOS).
 #
 # Uso:
-#   bin/setup.sh <slug>
+#   bin/setup.sh <nome>       # cria em $INVESTOS_PORTFOLIOS_DIR/investos-<nome>
+#                              # (default de INVESTOS_PORTFOLIOS_DIR: ~/Documents)
+#   bin/setup.sh <caminho>    # caminho explicito (contem "/", comeca com "." ou "~")
 #
-# Se <slug>/ ja existir, pede confirmacao explicita (y/N) antes de sobrescrever.
+# Override do diretorio base dos portfolios (nome puro, sem caminho):
+#   INVESTOS_PORTFOLIOS_DIR=/outro/lugar bin/setup.sh <nome>
+#
+# Se o portfolio ja existir, pede confirmacao explicita (y/N) antes de sobrescrever.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_TEMPLATE="$REPO_ROOT/templates/skills"
 COMMANDS_TEMPLATE="$REPO_ROOT/templates/commands"
+PORTFOLIOS_BASE="${INVESTOS_PORTFOLIOS_DIR:-$HOME/Documents}"
 
 slugify() {
   local input="$1" slug
@@ -20,27 +27,42 @@ slugify() {
   printf '%s' "$slug"
 }
 
-RAW_SLUG="${1:-}"
+RAW_ARG="${1:-}"
 
-if [ -z "$RAW_SLUG" ]; then
-  echo "Uso: bin/setup.sh <slug>" >&2
+if [ -z "$RAW_ARG" ]; then
+  echo "Uso: bin/setup.sh <nome> | bin/setup.sh <caminho>" >&2
   exit 1
 fi
 
-SLUG="$(slugify "$RAW_SLUG")"
+if [[ "$RAW_ARG" == */* || "$RAW_ARG" == .* || "$RAW_ARG" == "~"* ]]; then
+  EXPANDED_ARG="${RAW_ARG/#\~/$HOME}"
+  DIR_PART="$(dirname "$EXPANDED_ARG")"
+  RAW_NAME="$(basename "$EXPANDED_ARG")"
+  DIR_PREFIX=""
+else
+  DIR_PART="$PORTFOLIOS_BASE"
+  RAW_NAME="$RAW_ARG"
+  DIR_PREFIX="investos-"
+fi
+
+SLUG="$(slugify "$RAW_NAME")"
 
 if [[ ! "$SLUG" =~ ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$ ]] || [[ "$SLUG" == *".."* ]] || [[ "$SLUG" == *"//"* ]]; then
-  echo "Slug invalido: recebido '$RAW_SLUG' (normalizado para '$SLUG'), esperado formato ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]\$, sem // nem .., max. 80 caracteres." >&2
+  echo "Slug invalido: recebido '$RAW_ARG' (normalizado para '$SLUG'), esperado formato ^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]\$, sem // nem .., max. 80 caracteres." >&2
   exit 1
 fi
 
-if [ -d "$SLUG" ]; then
-  read -r -p "Portfolio '$SLUG' ja existe. Sobrescrever? [y/N] " CONFIRM || CONFIRM=""
+TARGET_DIR="$DIR_PART/$DIR_PREFIX$SLUG"
+
+if [ -d "$TARGET_DIR" ]; then
+  read -r -p "Portfolio '$TARGET_DIR' ja existe. Sobrescrever? [y/N] " CONFIRM || CONFIRM=""
   if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
     echo "Cancelado: nada foi alterado." >&2
     exit 1
   fi
 fi
+
+mkdir -p "$DIR_PART"
 
 DOMAINS=(research risco dados-mercado corretora-banco)
 ENABLED_PLUGINS="{}"
@@ -62,22 +84,22 @@ case "$MERCADO" in
     ;;
 esac
 
-mkdir -p "$SLUG/_memoria" "$SLUG/.claude/commands"
-cp "$COMMANDS_TEMPLATE/instalar.md" "$COMMANDS_TEMPLATE/status.md" "$SLUG/.claude/commands/"
+mkdir -p "$TARGET_DIR/_memoria" "$TARGET_DIR/.claude/commands"
+cp "$COMMANDS_TEMPLATE/instalar.md" "$COMMANDS_TEMPLATE/status.md" "$TARGET_DIR/.claude/commands/"
 
-cat > "$SLUG/CLAUDE.md" <<EOF
+cat > "$TARGET_DIR/CLAUDE.md" <<EOF
 # $SLUG
 
 Portfolio InvestOS. Configure dominios e mercado via setup interativo.
 EOF
 
-: > "$SLUG/.env"
-rm -f "$SLUG/.mcp.json"
+: > "$TARGET_DIR/.env"
+rm -f "$TARGET_DIR/.mcp.json"
 MCP_SERVERS='{}'
 
 if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   [ "$MERCADO" != "br" ]; then
-  printf 'ALPHA_VANTAGE_API_KEY=\n' >> "$SLUG/.env"
+  printf 'ALPHA_VANTAGE_API_KEY=\n' >> "$TARGET_DIR/.env"
   MCP_SERVERS=$(jq '. + {
       "alpha-vantage": {
         "type": "http",
@@ -88,11 +110,11 @@ fi
 
 if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   [ "$MERCADO" != "us" ]; then
-  printf 'BRAPI_TOKEN=\n' >> "$SLUG/.env"
+  printf 'BRAPI_TOKEN=\n' >> "$TARGET_DIR/.env"
 fi
 
 if jq -e '.["corretora-banco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
-  printf 'PLAID_CLIENT_ID=\nPLAID_SECRET=\n' >> "$SLUG/.env"
+  printf 'PLAID_CLIENT_ID=\nPLAID_SECRET=\n' >> "$TARGET_DIR/.env"
   MCP_SERVERS=$(jq '. + {
       "plaid": {
         "type": "stdio",
@@ -110,33 +132,43 @@ if jq -e '.["corretora-banco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
 fi
 
 if [ "$MCP_SERVERS" != '{}' ]; then
-  jq -n --argjson servers "$MCP_SERVERS" '{mcpServers: $servers}' > "$SLUG/.mcp.json"
+  jq -n --argjson servers "$MCP_SERVERS" '{mcpServers: $servers}' > "$TARGET_DIR/.mcp.json"
 fi
 
 jq -n --argjson plugins "$ENABLED_PLUGINS" \
   '{"$schema": "https://json.schemastore.org/claude-code-settings.json", "enabledPlugins": $plugins}' \
-  > "$SLUG/.claude/settings.json"
+  > "$TARGET_DIR/.claude/settings.json"
 
-jq -n --arg mercado "$MERCADO" '{mercado: $mercado}' > "$SLUG/portfolio.json"
+jq -n --arg mercado "$MERCADO" '{mercado: $mercado}' > "$TARGET_DIR/portfolio.json"
 
-rm -rf "$SLUG/.claude/skills"
+rm -rf "$TARGET_DIR/.claude/skills"
 if jq -e '.["research"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
-  mkdir -p "$SLUG/.claude/skills"
+  mkdir -p "$TARGET_DIR/.claude/skills"
   if [ "$MERCADO" != "us" ]; then
-    cp -r "$SKILLS_TEMPLATE/research-br" "$SLUG/.claude/skills/"
+    cp -r "$SKILLS_TEMPLATE/research-br" "$TARGET_DIR/.claude/skills/"
   fi
   if [ "$MERCADO" != "br" ]; then
-    cp -r "$SKILLS_TEMPLATE/research-us" "$SLUG/.claude/skills/"
+    cp -r "$SKILLS_TEMPLATE/research-us" "$TARGET_DIR/.claude/skills/"
   fi
 fi
 if jq -e '.["risco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
-  mkdir -p "$SLUG/.claude/skills"
-  cp -r "$SKILLS_TEMPLATE/rebalanceamento" "$SLUG/.claude/skills/"
+  mkdir -p "$TARGET_DIR/.claude/skills"
+  cp -r "$SKILLS_TEMPLATE/rebalanceamento" "$TARGET_DIR/.claude/skills/"
 fi
 
-cat > "$SLUG/.gitignore" <<'EOF'
+cat > "$TARGET_DIR/.gitignore" <<'EOF'
 .env
 _cache/
 EOF
 
-echo "Portfolio '$SLUG' criado em ./$SLUG"
+cat <<EOF
+Portfolio '$SLUG' criado em $TARGET_DIR
+
+Abra o Claude Code dentro do portfolio:
+
+    cd "$TARGET_DIR" && claude
+
+Depois, rode dentro do Claude Code:
+
+    /instalar     # entrevista guiada (diagnostico + posicoes + alocacao-alvo)
+EOF
