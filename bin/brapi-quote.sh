@@ -70,12 +70,26 @@ write_cache() {
 }
 
 build_quote_url() {
-  local ticker="$1" token="$2" url
+  local ticker="$1" token="$2" url sep
   url="$BRAPI_BASE_URL/$ticker"
+  sep="?"
+  if [ -n "${BRAPI_RANGE:-}" ]; then
+    url="${url}?range=${BRAPI_RANGE}&interval=${BRAPI_INTERVAL:-1d}"
+    sep="&"
+  fi
   if [ -n "$token" ]; then
-    url="$url?token=$token"
+    url="${url}${sep}token=$token"
   fi
   printf '%s' "$url"
+}
+
+cache_path() {
+  local slug="$1" ticker="$2"
+  if [ -n "${BRAPI_RANGE:-}" ]; then
+    printf '%s/_cache/brapi/%s-%s-%s.json' "$slug" "$ticker" "$BRAPI_RANGE" "${BRAPI_INTERVAL:-1d}"
+    return
+  fi
+  printf '%s/_cache/brapi/%s.json' "$slug" "$ticker"
 }
 
 SLUG="${1:-}"
@@ -93,7 +107,7 @@ fi
 
 TICKER=$(printf '%s' "$RAW_TICKER" | tr '[:lower:]' '[:upper:]')
 TOKEN=$(read_token "$SLUG/.env")
-CACHE="$SLUG/_cache/brapi/${TICKER}.json"
+CACHE=$(cache_path "$SLUG" "$TICKER")
 
 if payload=$(read_fresh_cache "$CACHE"); then
   printf '%s\n' "$payload"
