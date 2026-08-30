@@ -52,7 +52,7 @@ code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(-
   <p><strong>US-001</strong> — Como investidor, quero conectar minha conta de corretora/banco (Plaid ou Interactive Brokers) em modo read-only, para que os holdings do portfólio sejam alimentados automaticamente em vez de digitados manualmente.</p>
   <ul class="meta"><li>Blocked by: plugin-catalog (entrada corretora/banco), portfolio-risk US-001 (consome holdings)</li></ul>
   <ul class="ac">
-    <li>AC: pelo menos 1 MCP do catálogo (Plaid ou Interactive Brokers) integrado.</li>
+    <li>AC: pelo menos 1 MCP do catálogo (Plaid ou Interactive Brokers) integrado via config declarativa (<code>&lt;slug&gt;/.mcp.json</code> + credencial placeholder em <code>&lt;slug&gt;/.env</code>) — mesmo mecanismo definido em prd-update-1.html para market-data-research.</li>
     <li>AC: acesso é estritamente read-only — nenhuma escrita/ordem possível via essa integração.</li>
   </ul>
 </div>

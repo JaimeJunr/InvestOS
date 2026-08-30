@@ -1,9 +1,9 @@
-approved_at: 2026-08-29T22:25:40Z
+approved_at: 2026-08-30T00:15:00Z
 approved_by: human
-current_tier: full
-current_prd_file: prd.html
-prd_sha256: 7215eb85dd909c0c4f99f53c888596f451d2cdc129220db22e4a967c72c75d67
-features_sha256: c2b7ab1c704ae803e24b1ca91a51d45c5a645b9e58fa73836514070cc3f2726c
+current_tier: update
+current_prd_file: prd-update-1.html
+prd_sha256: 35125b807fb264d400ebbde42e007e86168b7c0b8f32379f3137940c493685f0
+features_sha256: 3de1c74bcb62960cce28c523a8170d1bd03b8c4da0888bbe7dc97d5dd5c8461d
 features:
   - workspace-generator: reviewer_approved
   - plugin-catalog: reviewer_approved

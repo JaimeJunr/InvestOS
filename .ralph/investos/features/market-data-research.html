@@ -52,7 +52,8 @@ code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(-
   <p><strong>US-001</strong> — Como investidor, quero consultar cotação e fundamentals de ativos US/global (ações, ETFs) via MCP do catálogo, para embasar research sem sair do Claude Code.</p>
   <ul class="meta"><li>Blocked by: workspace-generator US-002, plugin-catalog US-001</li></ul>
   <ul class="ac">
-    <li>AC: pelo menos 1 MCP do catálogo (ex.: Alpha Vantage) integrado e funcional quando domínio "dados de mercado" + mercado US/global estão habilitados no setup.</li>
+    <li>AC: pelo menos 1 MCP do catálogo (ex.: Alpha Vantage) integrado e funcional quando domínio "dados de mercado" + mercado "us" ou "ambos" (enum de workspace-generator US-005) estão habilitados no setup.</li>
+    <li>AC: "integrado e funcional" significa config declarativa — <code>&lt;slug&gt;/.mcp.json</code> referencia o MCP escolhido do catálogo, credencial fica como placeholder em <code>&lt;slug&gt;/.env</code> (mesmo padrão de workspace-generator US-001); testes verificam a estrutura do config, não fazem chamada de API real (definido em prd-update-1.html).</li>
   </ul>
 </div>
 <div class="user-story" id="US-002">

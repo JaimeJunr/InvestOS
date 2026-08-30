@@ -81,6 +81,17 @@ code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(-
   </ul>
 </div>
 
+<div class="user-story" id="US-005">
+  <p><strong>US-005</strong> — Como operador, quero que o campo "mercado" gravado no setup seja validado contra um enum fixo (retroativo a US-002), para que features consumidoras (Dados de Mercado e Pesquisa, Integração com Corretora/Banco) possam detectar de forma confiável se BR e/ou US/global estão habilitados.</p>
+  <ul class="meta"><li>Blocked by: US-002</li></ul>
+  <ul class="ac">
+    <li>AC: valores aceitos são exatamente "br", "us" ou "ambos", comparação case-insensitive (ex.: "BR", "Br" e "br" são equivalentes).</li>
+    <li>AC: qualquer outro valor digitado é rejeitado com mensagem explicando o valor recebido e os 3 valores aceitos — sem mapeamento automático de sinônimos (ex.: "brasil" não é aceito).</li>
+    <li>AC: Typecheck passes</li>
+  </ul>
+</div>
+<p><em>Adicionada por prd-update-1.html: resolve a ambiguidade de enum de mercado que bloqueou mdr-US-001 no /ralph.</em></p>
+
 <h2>Functional Requirements</h2>
 <ol>
   <li>Comando cria a pasta <code>&lt;slug&gt;/</code> com <code>CLAUDE.md</code>, <code>_memoria/</code>, <code>.env</code>, <code>.claude/settings.json</code>, <code>.gitignore</code>.</li>
@@ -104,6 +115,7 @@ code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(-
 <ul class="req-checklist">
   <li class="rc rc-pass">Está definido o conjunto mínimo de perguntas do setup interativo (domínio + mercado)?</li>
   <li class="rc rc-pass">Está definido o comportamento de idempotência (não sobrescrever sem confirmar)?</li>
+  <li class="rc rc-pass">Está definido o enum aceito e o comportamento de rejeição para o campo mercado?</li>
 </ul>
 
 <h3>Feature-Local Open Questions</h3>

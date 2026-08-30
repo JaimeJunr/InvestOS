@@ -33,9 +33,7 @@
       "priority": 2,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-001"
-      ],
+      "blockedBy": ["wg-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -53,9 +51,7 @@
       "priority": 3,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-001"
-      ],
+      "blockedBy": ["wg-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -73,14 +69,29 @@
       "priority": 4,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-001",
-        "wg-US-002"
-      ],
+      "blockedBy": ["wg-US-001", "wg-US-002"],
       "jiraKey": null,
       "repo": null,
       "passes": true,
       "notes": "feature: workspace-generator"
+    },
+    {
+      "id": "wg-US-005",
+      "title": "Validacao/normalizacao do campo mercado (retroativo)",
+      "description": "Como operador, quero que o campo 'mercado' gravado no setup seja validado contra um enum fixo (retroativo a wg-US-002), para que features consumidoras (Dados de Mercado e Pesquisa, Integracao com Corretora/Banco) possam detectar de forma confiavel se BR e/ou US/global estao habilitados.",
+      "acceptanceCriteria": [
+        "Valores aceitos sao exatamente 'br', 'us' ou 'ambos', comparacao case-insensitive (ex.: 'BR', 'Br' e 'br' sao equivalentes).",
+        "Qualquer outro valor digitado e rejeitado com mensagem explicando o valor recebido e os 3 valores aceitos - sem mapeamento automatico de sinonimos (ex.: 'brasil' nao e aceito).",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "difficulty": "low",
+      "profile": "general",
+      "blockedBy": ["wg-US-002"],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: workspace-generator; adicionada por prd-update-1.html (resolve BLOCKED de mdr-US-001)"
     },
     {
       "id": "pc-US-001",
@@ -91,7 +102,7 @@
         "Cada entrada tem nome, repo/link, tipo (plugin/skill/agent/MCP), credencial exigida (sim/nao).",
         "Typecheck passes"
       ],
-      "priority": 5,
+      "priority": 6,
       "difficulty": "low",
       "profile": "general",
       "blockedBy": [],
@@ -108,12 +119,10 @@
         "Entradas sem credencial (ex.: baseadas em yfinance publico) ficam marcadas separadamente das que exigem (Plaid, Interactive Brokers, Alpha Vantage tier pago, CPZAI).",
         "Typecheck passes"
       ],
-      "priority": 6,
+      "priority": 7,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": [
-        "pc-US-001"
-      ],
+      "blockedBy": ["pc-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -127,12 +136,10 @@
         "Dominio 'dados de mercado' registra o gap BR de forma visivel (nao omitido, nao maquiado como 'em breve').",
         "Typecheck passes"
       ],
-      "priority": 7,
+      "priority": 8,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": [
-        "pc-US-001"
-      ],
+      "blockedBy": ["pc-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -143,20 +150,18 @@
       "title": "Integracao com MCP de dados US/global",
       "description": "Como investidor, quero consultar cotacao e fundamentals de ativos US/global (acoes, ETFs) via MCP do catalogo, para embasar research sem sair do Claude Code.",
       "acceptanceCriteria": [
-        "Pelo menos 1 MCP do catalogo (ex.: Alpha Vantage) integrado e funcional quando dominio 'dados de mercado' + mercado US/global estao habilitados no setup.",
+        "Pelo menos 1 MCP do catalogo (ex.: Alpha Vantage) integrado e funcional quando dominio 'dados de mercado' + mercado 'us' ou 'ambos' (enum de wg-US-005) estao habilitados no setup.",
+        "'Integrado e funcional' significa config declarativa: <slug>/.mcp.json referencia o MCP escolhido do catalogo, credencial fica como placeholder em <slug>/.env (mesmo padrao de wg-US-001); testes verificam a estrutura do config, nao fazem chamada de API real.",
         "Typecheck passes"
       ],
-      "priority": 8,
+      "priority": 9,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-002",
-        "pc-US-001"
-      ],
+      "blockedBy": ["wg-US-002", "wg-US-005", "pc-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
-      "notes": "feature: market-data-research"
+      "notes": "feature: market-data-research; AC amendada por prd-update-1.html"
     },
     {
       "id": "mdr-US-002",
@@ -168,12 +173,10 @@
         "Fallback opcional via yfinance (.SA) documentado, sem quota garantida.",
         "Typecheck passes"
       ],
-      "priority": 9,
+      "priority": 10,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-001"
-      ],
+      "blockedBy": ["wg-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -188,12 +191,10 @@
         "Usuario informa o(s) fundo(s) de interesse (watchlist); parser filtra so esses no processamento diario.",
         "Typecheck passes"
       ],
-      "priority": 10,
+      "priority": 11,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "mdr-US-002"
-      ],
+      "blockedBy": ["mdr-US-002"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -207,14 +208,10 @@
         "Pelo menos 1 skill de research funcional por mercado habilitado (BR e/ou US, conforme setup).",
         "Typecheck passes"
       ],
-      "priority": 11,
+      "priority": 12,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": [
-        "mdr-US-001",
-        "mdr-US-002",
-        "mdr-US-003"
-      ],
+      "blockedBy": ["mdr-US-001", "mdr-US-002", "mdr-US-003"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -229,13 +226,10 @@
         "Funciona com posicoes registradas manualmente (arquivo holdings.json no portfolio) ja no v1, sem depender de integracao de corretora.",
         "Typecheck passes"
       ],
-      "priority": 12,
+      "priority": 13,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "mdr-US-001",
-        "mdr-US-002"
-      ],
+      "blockedBy": ["mdr-US-001", "mdr-US-002"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -250,12 +244,10 @@
         "Quando um ativo nao tem historico suficiente, o calculo prossegue com um aviso explicito de limitacao em vez de travar o relatorio inteiro ou omitir o ativo silenciosamente.",
         "Typecheck passes"
       ],
-      "priority": 13,
+      "priority": 14,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": [
-        "pr-US-001"
-      ],
+      "blockedBy": ["pr-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -270,12 +262,10 @@
         "A skill nunca executa ordem - so sugere.",
         "Typecheck passes"
       ],
-      "priority": 14,
+      "priority": 15,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "pr-US-001"
-      ],
+      "blockedBy": ["pr-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -286,21 +276,18 @@
       "title": "Conectar corretora/banco em modo read-only",
       "description": "Como investidor, quero conectar minha conta de corretora/banco (Plaid ou Interactive Brokers) em modo read-only, para que os holdings do portfolio sejam alimentados automaticamente em vez de digitados manualmente.",
       "acceptanceCriteria": [
-        "Pelo menos 1 MCP do catalogo (Plaid ou Interactive Brokers) integrado.",
+        "Pelo menos 1 MCP do catalogo (Plaid ou Interactive Brokers) integrado via config declarativa (<slug>/.mcp.json + credencial placeholder em <slug>/.env) - mesmo mecanismo definido para market-data-research.",
         "Acesso e estritamente read-only - nenhuma escrita/ordem possivel via essa integracao.",
         "Typecheck passes"
       ],
-      "priority": 15,
+      "priority": 16,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": [
-        "pc-US-001",
-        "pr-US-001"
-      ],
+      "blockedBy": ["pc-US-001", "pr-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
-      "notes": "feature: broker-integration"
+      "notes": "feature: broker-integration; AC amendada por prd-update-1.html"
     },
     {
       "id": "bi-US-002",
@@ -310,12 +297,10 @@
         "Credenciais lidas so do .env local do portfolio; nenhum log ou arquivo de config em texto plano grava a credencial.",
         "Typecheck passes"
       ],
-      "priority": 16,
+      "priority": 17,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "wg-US-001"
-      ],
+      "blockedBy": ["wg-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
@@ -330,12 +315,10 @@
         "Se o token expirar/a conexao falhar, o sistema mantem o ultimo holdings.json conhecido com aviso de idade do dado, em vez de zerar a carteira ou travar.",
         "Typecheck passes"
       ],
-      "priority": 17,
+      "priority": 18,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": [
-        "bi-US-001"
-      ],
+      "blockedBy": ["bi-US-001"],
       "jiraKey": null,
       "repo": null,
       "passes": false,
