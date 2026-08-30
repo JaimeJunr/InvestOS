@@ -76,6 +76,7 @@ The practical consequence: every script that needs external market data or broke
 
 - `bin/risco.sh` — `RISCO_HISTORY`
 - `bin/alocacao.sh` — `ALOCACAO_QUOTE`
+- `bin/diagnostico.sh` — reuses `ALOCACAO_QUOTE` for prices; DY 12m is read from brapi `dividendYield` (best-effort; missing/failed fetch becomes `"indisponivel"`)
 - `bin/holdings-sync.sh` — `HOLDINGS_FETCH`
 - `bin/benchmark-quote.sh` — `BENCHMARK_QUOTE` for US (`^GSPC`); the documented yfinance fallback is non-official and has no guaranteed quota
 
@@ -93,7 +94,7 @@ If the brokerage connection fails or the token expired, the script keeps the las
 
 ### Report scripts (bash driver + Python renderer)
 
-`alocacao.sh`, `risco.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, `alocacao-alvo.json`), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation (allocation drift, VaR/Sharpe/drawdown, rebalancing suggestions) and prints the report. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion.
+`alocacao.sh`, `risco.sh`, `diagnostico.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, and `alocacao-alvo.json` when the report needs a target), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation and prints the report. `diagnostico.sh` reads only the current snapshot (optional `liquidez` on each holding, `D+0`/`D+1`) and never invents DY or prints a recommended limit. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion.
 
 ### Skills (`templates/skills/`)
 

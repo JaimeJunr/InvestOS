@@ -18,4 +18,12 @@ if [ -z "$ticker" ] || [ "$ticker" = "$url" ]; then
   exit 1
 fi
 
+if [ -n "${BRAPI_DIVIDEND_YIELDS:-}" ] && [ -f "${BRAPI_DIVIDEND_YIELDS}" ]; then
+  dy=$(jq -r --arg t "$ticker" '.[$t] // empty' "$BRAPI_DIVIDEND_YIELDS")
+  if [ -n "$dy" ]; then
+    printf '{"results":[{"symbol":"%s","regularMarketPrice":10.5,"dividendYield":%s}]}\n' "$ticker" "$dy"
+    exit 0
+  fi
+fi
+
 printf '{"results":[{"symbol":"%s","regularMarketPrice":10.5}]}\n' "$ticker"
