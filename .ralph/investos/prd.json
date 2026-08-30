@@ -436,7 +436,7 @@
       "blockedBy": [],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: historico-metricas; validado por spikes/benchmark-nav.md"
     },
     {
