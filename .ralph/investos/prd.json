@@ -214,7 +214,7 @@
       "blockedBy": ["mdr-US-001", "mdr-US-002", "mdr-US-003"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: market-data-research"
     },
     {
