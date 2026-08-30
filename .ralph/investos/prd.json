@@ -90,7 +90,7 @@
       "blockedBy": ["wg-US-002"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: workspace-generator; adicionada por prd-update-1.html (resolve BLOCKED de mdr-US-001)"
     },
     {
@@ -160,7 +160,7 @@
       "blockedBy": ["wg-US-002", "wg-US-005", "pc-US-001"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: market-data-research; AC amendada por prd-update-1.html"
     },
     {

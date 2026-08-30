@@ -9,6 +9,8 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - settings.json de portfolio gerado usa `"enabledPlugins": {}` (vazio) por padrao quando nenhum dominio e escolhido; cada dominio confirmado y/Y ganha uma chave `true` (wg-US-002).
 - Mercado (BR/US/ambos) do portfolio vive em <slug>/portfolio.json, separado de .claude/settings.json (que e reservado a dominios/plugins habilitados).
 - Padrao para prompts interativos em bin/*.sh sob `set -euo pipefail`: sempre `read -r -p "..." VAR || VAR=""` — sem o fallback, EOF de stdin (comum em testes bats/CI) mata o script por causa do set -e.
+- O campo `mercado` em portfolio.json usa o enum canonico lowercase `br|us|ambos`; o setup aceita variacao apenas de caixa, rejeita sinonimos e valida antes de criar os arquivos do portfolio.
+- MCP "integrado e funcional" (prd-update-1) = config declarativa: `<slug>/.mcp.json` + placeholder vazio no `<slug>/.env` (gitignorado). Testes assertam estrutura (jq/grep), nunca chamada de API. Sempre `rm -f "$SLUG/.mcp.json"` antes do if, para overwrite (ex. ambos→br) nao deixar MCP residual.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -77,4 +79,24 @@ Started: sáb 29 ago 2026 19:31:33 -03
   3. Grep por precedente similar: nenhuma story anterior tocou integracao com API/MCP externo real ou validacao de enum de mercado; wg-US-002 so grava o texto digitado sem normalizar. Nao ha padrao equivalente no codebase para seguir.
 - O que eu precisava saber: (a) enum/normalizacao definitiva para o campo "mercado" (valores aceitos, case-sensitivity, sinonimos) e onde essa validacao deveria morrer (dentro de wg-US-002 retroativamente, ou nova pre-condicao desta story); (b) se "integrado e funcional" para este projeto (gerador de workspace em bash, sem stack de app real, testes via bats+jq) significa config declarativa de MCP server (.mcp.json + credencial em .env) ou implementacao de client real com chamada de API.
 - Recomendacao: re-rodar /prd para refinar mdr-US-001 (e possivelmente retroagir uma decisao de enum em wg-US-002) antes de re-rodar /ralph.
+---
+
+## 2026-08-29 21:43:26 -0300 - wg-US-005
+- Implementado enum canonico de mercado no setup: entrada case-insensitive para `br`, `us` e `ambos`, persistencia lowercase e rejeicao de qualquer outro valor antes da criacao do portfolio, com mensagem contendo valor recebido e valores aceitos.
+- Files changed: bin/setup.sh, tests/setup.bats, .ralph/investos/attempts.log.
+- Learnings for future iterations:
+  - Features consumidoras podem tratar portfolio.json.mercado como `br|us|ambos`, sem sinonimos nem variacao de caixa.
+  - Testes antigos que executam o setup precisam fornecer um mercado valido explicitamente; EOF agora e entrada invalida pelo contrato refinado.
+  - GATE 6 aprovou TDR genuino nos dois ACs comportamentais e aderencia PASS; sugestao LOW nao-bloqueante: numa manutencao futura, tornar a assercao da lista aceita independente da substring `br` presente em `brasil`.
+- GATE 1: tests passing (22/22) | GATE 2: lint clean (`bash -n`, shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`) | GATE 4: coverage n/a (Bash/Bats sem tooling ou threshold) | GATE 5: committed at 8f466c5 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+---
+
+## 2026-08-29 22:06:01 -0300 - mdr-US-001
+- Implementado em bin/setup.sh: quando dominio `dados-mercado` esta habilitado e mercado e `us` ou `ambos`, o setup grava `<slug>/.mcp.json` com o MCP Alpha Vantage (HTTP, URL com `${ALPHA_VANTAGE_API_KEY}`) e placeholder `ALPHA_VANTAGE_API_KEY=` em `<slug>/.env`. Mercado `br` ou dominio desligado nao gera MCP; `rm -f` do `.mcp.json` no overwrite evita residual.
+- Files changed: bin/setup.sh, tests/setup.bats (2 casos novos), .ralph/investos/attempts.log.
+- Learnings for future iterations:
+  - "Integrado e funcional" nesta fase e so config declarativa (prd-update-1). Sem client HTTP, sem chamada de API nos testes.
+  - Catalogo declara `https://www.alphavantage.co/mcp/` (pagina); o endpoint MCP HTTP usado no `.mcp.json` e `https://mcp.alphavantage.co/mcp?apikey=...`. URL hardcoded no setup, nao lida de catalog.json (nit LOW do reviewer — lookup dinamico nao e AC).
+  - GATE 6: tdr-runner e qa-reviewer nao resolvem como `subagent_type` neste harness Grok; despacho via general-purpose carregando o contrato dos agents do quati-revisor (mesmo precedente das iteracoes anteriores). Mutation testing no orquestrador (3 mutacoes, restore) + TDR independente + aderencia PASS.
+- GATE 1: tests passing (24/24) | GATE 2: lint clean (`bash -n`, shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n` / `jq empty catalog.json`) | GATE 4: coverage n/a (Bash/Bats sem tooling ou threshold) | GATE 5: committed at 5b038ee | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
