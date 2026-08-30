@@ -396,3 +396,19 @@ assert_skill() {
   [ -f "$FAKE_HOME/carteira-til/CLAUDE.md" ]
   rm -rf "$FAKE_HOME"
 }
+
+@test "instalar.md pergunta ano-alvo dos objetivos e grava ultimaRevisao" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  grep -qi "ano" "acme/.claude/commands/instalar.md"
+  grep -q "ultimaRevisao" "acme/.claude/commands/instalar.md"
+}
+
+@test "status.md lembra revisao periodica e aponta bin/aporte.sh e bin/perdas.sh" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  grep -q "ultimaRevisao" "acme/.claude/commands/status.md"
+  grep -q "bin/aporte.sh" "acme/.claude/commands/status.md"
+  grep -q "bin/perdas.sh" "acme/.claude/commands/status.md"
+  grep -qi "180 dias\|seis meses\|6 meses" "acme/.claude/commands/status.md"
+}

@@ -13,7 +13,9 @@ esses arquivos, um de cada vez, usando `AskUserQuestion` quando fizer sentido.
 
 Rode a partir da raiz do InvestOS (não de dentro desta pasta). Se `holdings.json` ou
 `alocacao-alvo.json` já existirem neste portfolio, avise e pergunte se quer sobrescrever antes de
-continuar — nunca sobrescreva sem confirmação explícita.
+continuar — nunca sobrescreva sem confirmação explícita. Se o `/status` sugeriu rodar `/instalar`
+de novo só pra revisar o diagnóstico (perfil, objetivos, `ultimaRevisao`), deixe claro que dá pra
+atualizar só o Passo 0 (`perfil-investidor.json`) sem mexer em `holdings.json`/`alocacao-alvo.json`.
 
 ## Passo 0 — Diagnóstico do investidor (`perfil-investidor.json`)
 
@@ -28,7 +30,9 @@ posições — pergunte pelo menos uma vez, e registre a resposta.
 2. **Objetivos e prazos:** para cada objetivo que o investidor mencionar, pergunte o prazo —
    **curto prazo** (até 1 ano: foco em liquidez e segurança, ex. reserva de emergência),
    **médio prazo** (1 a 5 anos: ganho real acima da inflação com risco controlado) ou
-   **longo prazo** (acima de 5 anos: acumulação de patrimônio, aposentadoria).
+   **longo prazo** (acima de 5 anos: acumulação de patrimônio, aposentadoria). Para objetivos de
+   médio/longo prazo, pergunte também um **ano-alvo aproximado** (ex.: "2030") — usado só pra
+   lembrar de revisar a estratégia conforme a data se aproxima, não é compromisso rígido.
 3. **Situação financeira atual (visão rápida, não um balanço completo):** capacidade de aporte
    mensal recorrente, e se já existe uma **reserva de emergência** de 3 a 12 meses de custo de vida
    em liquidez diária. Se a reserva ainda não existir, avise antes de seguir — normalmente ela vem
@@ -46,12 +50,17 @@ Grave em `perfil-investidor.json`:
 ```json
 {
   "perfilRisco": "moderado",
-  "objetivos": [{"nome": "reserva de emergencia", "prazo": "curto"}],
+  "objetivos": [{"nome": "reserva de emergencia", "prazo": "curto"}, {"nome": "aposentadoria", "prazo": "longo", "anoAlvo": 2050}],
   "reservaEmergenciaOk": true,
   "cienteDeCustosEImpostos": true,
-  "expectativasAlinhadas": true
+  "expectativasAlinhadas": true,
+  "ultimaRevisao": "2026-08-30"
 }
 ```
+
+`ultimaRevisao` é a data de hoje (formato `AAAA-MM-DD`) — o `/status` usa esse campo pra lembrar de
+rodar `/instalar` de novo (revisão do diagnóstico, não do zero) quando passar muito tempo, ou
+quando um `anoAlvo` estiver se aproximando.
 
 Use o perfil de risco registrado aqui para **sugerir** um ponto de partida de alocação-alvo no
 Passo 2 (ex.: perfil conservador tende a mais peso em renda fixa, arrojado tende a mais peso em
