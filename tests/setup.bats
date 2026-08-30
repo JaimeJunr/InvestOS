@@ -108,3 +108,31 @@ assert d['mercado'] == 'ambos', d
   [[ "$output" == *"!!!"* ]]
   [[ "$output" == *"^[a-z0-9]"* ]]
 }
+
+# Testes de wg-US-004: isolamento entre portfolios gerados lado a lado.
+
+@test "dois portfolios nao compartilham _memoria nem .env" {
+  bash -c "printf 'y\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  bash -c "printf 'n\nn\nn\ny\nUS\n' | '$SCRIPT' beta"
+
+  echo "SEGREDO-ACME" > acme/.env
+  echo "MEMORIA-ACME" > acme/_memoria/nota.md
+
+  [ ! -e "beta/.env" ] || [ ! -s "beta/.env" ]
+  ! grep -q "SEGREDO-ACME" "beta/.env" 2>/dev/null
+  [ ! -e "beta/_memoria/nota.md" ]
+}
+
+@test "cada portfolio tem seu proprio settings.json com enabledPlugins independente" {
+  bash -c "printf 'y\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  bash -c "printf 'n\nn\nn\ny\nUS\n' | '$SCRIPT' beta"
+
+  run python3 -c "
+import json
+acme = json.load(open('acme/.claude/settings.json'))['enabledPlugins']
+beta = json.load(open('beta/.claude/settings.json'))['enabledPlugins']
+assert acme == {'research': True}, acme
+assert beta == {'corretora-banco': True}, beta
+"
+  [ "$status" -eq 0 ]
+}
