@@ -88,3 +88,8 @@
 [2026-08-30T00:42:08-03:00] bi-US-003 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
 [2026-08-30T00:51:40-03:00] bi-US-003 GATE 5 attempt 1: commit 0327014 criado → PASS
 [2026-08-30T00:51:40-03:00] bi-US-003 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x credential-gate/zero-on-fail/idade/exit-1, 0 survivors; tdr independente reconfirmou); aderencia PASS via qa-reviewer (APROVA WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 3 LOW) → PASS
+[2026-08-30T22:23:58+00:00] fh-US-001 RED: 2 tests written, all failing as expected
+[2026-08-30T19:27:02-03:00] fh-US-001 GATE 1 attempt 1: suite completa Bats 108/108 verde, 0 falhas → PASS
+[2026-08-30T19:27:21-03:00] fh-US-001 GATE 2 attempt 1: shellcheck indisponivel; nenhum linter configurado, conforme CLAUDE.md → PASS (n/a)
+[2026-08-30T19:27:33-03:00] fh-US-001 GATE 3 attempt 1: bash -n em bin/*.sh e tests/helpers/*.sh, py_compile em bin/*.py e jq empty catalog.json → PASS
+[2026-08-30T19:27:47-03:00] fh-US-001 GATE 4 attempt 1: coverage n/a (Bash/Bats sem tooling ou threshold configurado) → PASS
