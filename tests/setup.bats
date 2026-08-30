@@ -143,9 +143,10 @@ assert d['mercado'] == 'ambos', d
   echo "SEGREDO-ACME" > acme/.env
   echo "MEMORIA-ACME" > acme/_memoria/nota.md
 
-  [ -f "beta/.env" ] && [ ! -s "beta/.env" ]
+  [ -f "beta/.env" ]
   [ -d "beta/_memoria" ]
-  ! grep -q "SEGREDO-ACME" "beta/.env" 2>/dev/null
+  grep -q "PLAID_" "beta/.env"
+  ! grep -q "SEGREDO-ACME" "beta/.env"
   [ ! -e "beta/_memoria/nota.md" ]
 }
 
@@ -267,4 +268,61 @@ assert_skill() {
   [ "$status" -eq 0 ]
   assert_skill "acme/.claude/skills/research-br/SKILL.md" "research-br" "brapi-quote.sh"
   [ ! -e "acme/.claude/skills/research-us" ]
+}
+
+# Testes de bi-US-001: MCP Plaid read-only via config declarativa.
+
+@test "corretora-banco gera MCP Plaid com placeholder no .env" {
+  run bash -c "printf 'n\nn\nn\ny\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.mcp.json" ]
+  run jq -e '
+    .mcpServers.plaid.command == "plaid-mcp"
+    and .mcpServers.plaid.type == "stdio"
+    and .mcpServers.plaid.env.PLAID_CLIENT_ID == "${PLAID_CLIENT_ID}"
+    and .mcpServers.plaid.env.PLAID_SECRET == "${PLAID_SECRET}"
+  ' "acme/.mcp.json"
+  [ "$status" -eq 0 ]
+  grep -qx 'PLAID_CLIENT_ID=' "acme/.env"
+  grep -qx 'PLAID_SECRET=' "acme/.env"
+}
+
+@test "sem dominio corretora-banco nao gera MCP Plaid" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ ! -e "acme/.mcp.json" ]
+  ! grep -q 'PLAID_' "acme/.env"
+}
+
+@test "dados-mercado us + corretora-banco coexistem no mesmo .mcp.json" {
+  run bash -c "printf 'n\nn\ny\ny\nus\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  run jq -e '.mcpServers["alpha-vantage"] and .mcpServers.plaid' "acme/.mcp.json"
+  [ "$status" -eq 0 ]
+  grep -qx 'ALPHA_VANTAGE_API_KEY=' "acme/.env"
+  grep -qx 'PLAID_CLIENT_ID=' "acme/.env"
+}
+
+@test "MCP Plaid e estritamente read-only (sem escrita/ordem)" {
+  run bash -c "printf 'n\nn\nn\ny\nus\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  run jq -e '.mcpServers.plaid.readOnly == true' "acme/.mcp.json"
+  [ "$status" -eq 0 ]
+  run jq -e '
+    (.mcpServers.plaid | tostring | ascii_downcase)
+    | (contains("transfer") or contains("payment") or contains("place_order") or contains("trading"))
+    | not
+  ' "acme/.mcp.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.mcpServers.plaid.env.PLAID_OPTIONAL_PRODUCTS | contains("investments")' "acme/.mcp.json"
+  [ "$status" -eq 0 ]
+}
+
+@test "overwrite corretora on para off remove MCP Plaid residual" {
+  printf 'n\nn\nn\ny\nbr\n' | "$SCRIPT" acme
+  [ -f "acme/.mcp.json" ]
+  run bash -c "printf 'y\nn\nn\nn\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ ! -e "acme/.mcp.json" ]
+  ! grep -q 'PLAID_' "acme/.env"
 }

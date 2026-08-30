@@ -71,25 +71,44 @@ EOF
 
 : > "$SLUG/.env"
 rm -f "$SLUG/.mcp.json"
+MCP_SERVERS='{}'
 
 if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   [ "$MERCADO" != "br" ]; then
   printf 'ALPHA_VANTAGE_API_KEY=\n' >> "$SLUG/.env"
-  jq -n '
-    {
-      "mcpServers": {
-        "alpha-vantage": {
-          "type": "http",
-          "url": "https://mcp.alphavantage.co/mcp?apikey=${ALPHA_VANTAGE_API_KEY}"
-        }
+  MCP_SERVERS=$(jq '. + {
+      "alpha-vantage": {
+        "type": "http",
+        "url": "https://mcp.alphavantage.co/mcp?apikey=${ALPHA_VANTAGE_API_KEY}"
       }
-    }
-  ' > "$SLUG/.mcp.json"
+    }' <<<"$MCP_SERVERS")
 fi
 
 if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   [ "$MERCADO" != "us" ]; then
   printf 'BRAPI_TOKEN=\n' >> "$SLUG/.env"
+fi
+
+if jq -e '.["corretora-banco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
+  printf 'PLAID_CLIENT_ID=\nPLAID_SECRET=\n' >> "$SLUG/.env"
+  MCP_SERVERS=$(jq '. + {
+      "plaid": {
+        "type": "stdio",
+        "command": "plaid-mcp",
+        "readOnly": true,
+        "env": {
+          "PLAID_CLIENT_ID": "${PLAID_CLIENT_ID}",
+          "PLAID_SECRET": "${PLAID_SECRET}",
+          "PLAID_ENV": "sandbox",
+          "PLAID_PRODUCTS": "transactions",
+          "PLAID_OPTIONAL_PRODUCTS": "investments"
+        }
+      }
+    }' <<<"$MCP_SERVERS")
+fi
+
+if [ "$MCP_SERVERS" != '{}' ]; then
+  jq -n --argjson servers "$MCP_SERVERS" '{mcpServers: $servers}' > "$SLUG/.mcp.json"
 fi
 
 jq -n --argjson plugins "$ENABLED_PLUGINS" \
