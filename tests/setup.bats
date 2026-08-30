@@ -162,3 +162,38 @@ assert beta == {'corretora-banco': True}, beta
 "
   [ "$status" -eq 0 ]
 }
+
+# Testes de mdr-US-001: integra Alpha Vantage para mercado US/global.
+
+@test "mercado us gera MCP Alpha Vantage somente com dados de mercado habilitado" {
+  run bash -c "printf 'n\nn\ny\nn\nus\n' | '$SCRIPT' com-dominio"
+  [ "$status" -eq 0 ]
+  [ -f "com-dominio/.mcp.json" ]
+  run jq -e '
+    .mcpServers["alpha-vantage"] == {
+      "type": "http",
+      "url": "https://mcp.alphavantage.co/mcp?apikey=${ALPHA_VANTAGE_API_KEY}"
+    }
+  ' "com-dominio/.mcp.json"
+  [ "$status" -eq 0 ]
+  grep -qx 'ALPHA_VANTAGE_API_KEY=' "com-dominio/.env"
+
+  run bash -c "printf 'n\nn\nn\nn\nus\n' | '$SCRIPT' sem-dominio"
+  [ "$status" -eq 0 ]
+  [ ! -e "sem-dominio/.mcp.json" ]
+  [ ! -s "sem-dominio/.env" ]
+}
+
+@test "mercado ambos gera MCP Alpha Vantage e mercado br nao gera" {
+  run bash -c "printf 'n\nn\ny\nn\nambos\n' | '$SCRIPT' global"
+  [ "$status" -eq 0 ]
+  [ -f "global/.mcp.json" ]
+  run jq -e '.mcpServers["alpha-vantage"].url | contains("${ALPHA_VANTAGE_API_KEY}")' "global/.mcp.json"
+  [ "$status" -eq 0 ]
+  grep -qx 'ALPHA_VANTAGE_API_KEY=' "global/.env"
+
+  run bash -c "printf 'y\nn\nn\ny\nn\nbr\n' | '$SCRIPT' global"
+  [ "$status" -eq 0 ]
+  [ ! -e "global/.mcp.json" ]
+  [ ! -s "global/.env" ]
+}

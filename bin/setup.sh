@@ -67,6 +67,22 @@ Portfolio InvestOS. Configure dominios e mercado via setup interativo.
 EOF
 
 : > "$SLUG/.env"
+rm -f "$SLUG/.mcp.json"
+
+if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
+  [ "$MERCADO" != "br" ]; then
+  printf 'ALPHA_VANTAGE_API_KEY=\n' > "$SLUG/.env"
+  jq -n '
+    {
+      "mcpServers": {
+        "alpha-vantage": {
+          "type": "http",
+          "url": "https://mcp.alphavantage.co/mcp?apikey=${ALPHA_VANTAGE_API_KEY}"
+        }
+      }
+    }
+  ' > "$SLUG/.mcp.json"
+fi
 
 jq -n --argjson plugins "$ENABLED_PLUGINS" \
   '{"$schema": "https://json.schemastore.org/claude-code-settings.json", "enabledPlugins": $plugins}' \
