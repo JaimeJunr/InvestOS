@@ -1,0 +1,116 @@
+{
+  "criterioEntrada": "Repositorio publico com marketplace.json valido (plugins) OU instalacao documentada (skills/MCPs). Sem exigencia de teste previo de qualidade - e catalogo de research, nao certificacao.",
+  "domains": [
+    {
+      "id": "research",
+      "nome": "Research/quant",
+      "entries": [
+        {
+          "name": "financial-services",
+          "repo": "anthropics/financial-services",
+          "type": "plugin marketplace",
+          "credencial": false,
+          "disclaimer": "Conectores pagos opcionais podem exigir credencial; nucleo do marketplace nao exige."
+        },
+        {
+          "name": "claude-trading-skills",
+          "repo": "tradermonty/claude-trading-skills",
+          "type": "skill",
+          "credencial": false
+        },
+        {
+          "name": "quant_investing_skills",
+          "repo": "openalphalab/quant_investing_skills",
+          "type": "skill",
+          "credencial": false
+        },
+        {
+          "name": "family-office",
+          "repo": "acantrell0523/family-office",
+          "type": "skill",
+          "credencial": false
+        }
+      ]
+    },
+    {
+      "id": "risco-portfolio",
+      "nome": "Risco/portfolio",
+      "entries": [
+        {
+          "name": "quant_investing_skills",
+          "repo": "openalphalab/quant_investing_skills",
+          "type": "skill",
+          "credencial": false
+        }
+      ]
+    },
+    {
+      "id": "dados-mercado",
+      "nome": "Dados de mercado",
+      "entries": [
+        {
+          "name": "Alpha Vantage MCP (oficial)",
+          "repo": "https://www.alphavantage.co/mcp/",
+          "type": "MCP",
+          "credencial": true
+        },
+        {
+          "name": "stock-scanner-mcp",
+          "repo": "stock-scanner-mcp",
+          "type": "MCP",
+          "credencial": true
+        },
+        {
+          "name": "financekit-mcp",
+          "repo": "financekit-mcp",
+          "type": "MCP",
+          "credencial": true
+        },
+        {
+          "name": "finance-skills",
+          "repo": "himself65/finance-skills",
+          "type": "skill",
+          "credencial": true
+        },
+        {
+          "name": "Dados de mercado BR (B3/fundos/ANBIMA)",
+          "repo": null,
+          "type": "gap",
+          "credencial": false,
+          "gap": true,
+          "disclaimer": "Gap: nenhum MCP/skill curado equivalente foi encontrado para dados de mercado brasileiro nesta sessao de research."
+        }
+      ]
+    },
+    {
+      "id": "corretora-banco",
+      "nome": "Corretora/banco",
+      "entries": [
+        {
+          "name": "plaid-mcp",
+          "repo": "plaid-mcp",
+          "type": "MCP",
+          "credencial": true
+        },
+        {
+          "name": "plaid-cli-mcp-server",
+          "repo": "plaid-cli-mcp-server",
+          "type": "MCP",
+          "credencial": true
+        },
+        {
+          "name": "skills (IBKR)",
+          "repo": "ScientiaCapital/skills",
+          "type": "skill",
+          "credencial": true
+        },
+        {
+          "name": "traderkit",
+          "repo": "nkrvivek/traderkit",
+          "type": "MCP",
+          "credencial": true
+        }
+      ]
+    }
+  ]
+}
