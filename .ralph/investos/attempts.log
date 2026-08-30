@@ -39,3 +39,8 @@
 [2026-08-29T22:31:17-03:00] mdr-US-003 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
 [2026-08-29T22:39:57-03:00] mdr-US-003 GATE 5 attempt 1: commit 758bd9d criado → PASS
 [2026-08-29T22:39:57-03:00] mdr-US-003 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x + tdr independente AC1/AC2); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS
+[2026-08-29T22:46:02-03:00] mdr-US-004 RED: 5 tests written; 4 failing as expected (install br/us/ambos + overwrite residual); 1 guard (research off) already green because setup still does not copy skills
+[2026-08-29T22:48:00-03:00] mdr-US-004 GATE 1 attempt 1: suite completa 45/45 → PASS
+[2026-08-29T22:48:00-03:00] mdr-US-004 GATE 2 attempt 1: bash -n bin/setup.sh (substituto shellcheck indisponivel) → PASS
+[2026-08-29T22:48:00-03:00] mdr-US-004 GATE 3 attempt 1: bash -n + python3 -m py_compile bin/cvm-informe-parse.py + jq empty catalog.json → PASS
+[2026-08-29T22:48:00-03:00] mdr-US-004 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS

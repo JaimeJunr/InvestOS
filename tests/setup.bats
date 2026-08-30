@@ -216,3 +216,55 @@ assert beta == {'corretora-banco': True}, beta
   grep -qx '_cache/' "global/.gitignore"
   [ -f "global/.mcp.json" ]
 }
+
+# Testes de mdr-US-004: 1 skill de research funcional por mercado habilitado.
+
+assert_skill() {
+  local path="$1" expected_name="$2" needle="$3"
+  [ -f "$path" ]
+  grep -q "^name: ${expected_name}$" "$path"
+  grep -q "^description: Use when" "$path"
+  grep -qi "$needle" "$path"
+}
+
+@test "research + mercado br instala so a skill de fundamentals BR" {
+  run bash -c "printf 'y\nn\nn\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/research-br/SKILL.md" "research-br" "brapi-quote.sh"
+  grep -q "cvm-informe.sh" "acme/.claude/skills/research-br/SKILL.md"
+  grep -qi "fundamentals" "acme/.claude/skills/research-br/SKILL.md"
+  [ ! -e "acme/.claude/skills/research-us" ]
+}
+
+@test "research + mercado us instala so a skill de fundamentals US" {
+  run bash -c "printf 'y\nn\nn\nn\nus\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/research-us/SKILL.md" "research-us" "alpha-vantage"
+  grep -qi "fundamentals" "acme/.claude/skills/research-us/SKILL.md"
+  [ ! -e "acme/.claude/skills/research-br" ]
+}
+
+@test "research + mercado ambos instala as duas skills de research" {
+  run bash -c "printf 'y\nn\nn\nn\nambos\n' | '$SCRIPT' global"
+  [ "$status" -eq 0 ]
+  assert_skill "global/.claude/skills/research-br/SKILL.md" "research-br" "brapi-quote.sh"
+  assert_skill "global/.claude/skills/research-us/SKILL.md" "research-us" "alpha-vantage"
+}
+
+@test "sem dominio research nao instala skill mesmo com dados-mercado" {
+  run bash -c "printf 'n\nn\ny\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.claude/settings.json" ]
+  [ -f "acme/portfolio.json" ]
+  [ ! -e "acme/.claude/skills/research-br" ]
+  [ ! -e "acme/.claude/skills/research-us" ]
+}
+
+@test "overwrite de ambos para br remove a skill US residual" {
+  printf 'y\nn\nn\nn\nambos\n' | "$SCRIPT" acme
+  [ -f "acme/.claude/skills/research-us/SKILL.md" ]
+  run bash -c "printf 'y\ny\nn\nn\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/research-br/SKILL.md" "research-br" "brapi-quote.sh"
+  [ ! -e "acme/.claude/skills/research-us" ]
+}

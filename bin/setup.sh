@@ -8,6 +8,9 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_TEMPLATE="$REPO_ROOT/templates/skills"
+
 slugify() {
   local input="$1" slug
   slug=$(printf '%s' "$input" | iconv -f utf8 -t ascii//TRANSLIT 2>/dev/null || printf '%s' "$input")
@@ -94,6 +97,17 @@ jq -n --argjson plugins "$ENABLED_PLUGINS" \
   > "$SLUG/.claude/settings.json"
 
 jq -n --arg mercado "$MERCADO" '{mercado: $mercado}' > "$SLUG/portfolio.json"
+
+rm -rf "$SLUG/.claude/skills"
+if jq -e '.["research"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
+  mkdir -p "$SLUG/.claude/skills"
+  if [ "$MERCADO" != "us" ]; then
+    cp -r "$SKILLS_TEMPLATE/research-br" "$SLUG/.claude/skills/"
+  fi
+  if [ "$MERCADO" != "br" ]; then
+    cp -r "$SKILLS_TEMPLATE/research-us" "$SLUG/.claude/skills/"
+  fi
+fi
 
 cat > "$SLUG/.gitignore" <<'EOF'
 .env
