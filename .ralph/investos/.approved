@@ -1,20 +1,22 @@
-approved_at: 2026-08-30T00:15:00Z
+approved_at: 2026-08-30T02:00:00Z
 approved_by: human
 current_tier: update
-current_prd_file: prd-update-1.html
-prd_sha256: 35125b807fb264d400ebbde42e007e86168b7c0b8f32379f3137940c493685f0
-features_sha256: 3de1c74bcb62960cce28c523a8170d1bd03b8c4da0888bbe7dc97d5dd5c8461d
+current_prd_file: prd-update-2.html
+prd_sha256: c7098b91e0924a24f1bd203cf49c604de8eebdd15d5d26f3482307092b8e31f4
+features_sha256: 8a9d2cc07963b52c97826e3393b0db18b148e4ed6af4561ea33ea8a716896e1f
 features:
   - workspace-generator: reviewer_approved
   - plugin-catalog: reviewer_approved
   - market-data-research: reviewer_approved
   - portfolio-risk: reviewer_approved
   - broker-integration: reviewer_approved
+  - historico-metricas: reviewer_approved
 parked_open_questions:
   - features/workspace-generator.html: "Escolha entre shell script (bin/setup.sh) e skill/slash command do Claude Code para o setup interativo — decisão de implementação, resolvida ao codar."
   - features/plugin-catalog.html: "(none)"
   - features/market-data-research.html: "Estrutura exata da watchlist de fundos (arquivo por portfólio? quantos fundos?) — detalhe de implementação, resolvido ao codar."
   - features/portfolio-risk.html: "Valor default do threshold de desvio (ex.: 5%?) — fica configurável por portfólio, sem default fixo definido neste PRD; decidido ao implementar ou pelo próprio usuário no setup."
   - features/broker-integration.html: "Qual provedor entra primeiro na implementação (Plaid vs. Interactive Brokers) — decisão de priorização de implementação, não trava o PRD; ambos estão no catálogo como opção."
+  - features/historico-metricas.html: "Formato exato de log de dividendos (pra DY 12m) e de imposto pago/ganho realizado (pra alíquota efetiva) dentro de transacoes.json — campos opcionais, detalhados na implementação de US-005/US-008."
 accepted_rc_fails:
   - "(none)"

@@ -33,7 +33,9 @@
       "priority": 2,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["wg-US-001"],
+      "blockedBy": [
+        "wg-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -51,7 +53,9 @@
       "priority": 3,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": ["wg-US-001"],
+      "blockedBy": [
+        "wg-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -69,7 +73,10 @@
       "priority": 4,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["wg-US-001", "wg-US-002"],
+      "blockedBy": [
+        "wg-US-001",
+        "wg-US-002"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -87,7 +94,9 @@
       "priority": 5,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": ["wg-US-002"],
+      "blockedBy": [
+        "wg-US-002"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -122,7 +131,9 @@
       "priority": 7,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": ["pc-US-001"],
+      "blockedBy": [
+        "pc-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -139,7 +150,9 @@
       "priority": 8,
       "difficulty": "low",
       "profile": "general",
-      "blockedBy": ["pc-US-001"],
+      "blockedBy": [
+        "pc-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -157,7 +170,11 @@
       "priority": 9,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["wg-US-002", "wg-US-005", "pc-US-001"],
+      "blockedBy": [
+        "wg-US-002",
+        "wg-US-005",
+        "pc-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -176,7 +193,9 @@
       "priority": 10,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["wg-US-001"],
+      "blockedBy": [
+        "wg-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -194,7 +213,9 @@
       "priority": 11,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["mdr-US-002"],
+      "blockedBy": [
+        "mdr-US-002"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -211,7 +232,11 @@
       "priority": 12,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": ["mdr-US-001", "mdr-US-002", "mdr-US-003"],
+      "blockedBy": [
+        "mdr-US-001",
+        "mdr-US-002",
+        "mdr-US-003"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -229,7 +254,10 @@
       "priority": 13,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["mdr-US-001", "mdr-US-002"],
+      "blockedBy": [
+        "mdr-US-001",
+        "mdr-US-002"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -247,7 +275,9 @@
       "priority": 14,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": ["pr-US-001"],
+      "blockedBy": [
+        "pr-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -265,7 +295,9 @@
       "priority": 15,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["pr-US-001"],
+      "blockedBy": [
+        "pr-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -283,7 +315,10 @@
       "priority": 16,
       "difficulty": "high",
       "profile": "specialist",
-      "blockedBy": ["pc-US-001", "pr-US-001"],
+      "blockedBy": [
+        "pc-US-001",
+        "pr-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -300,7 +335,9 @@
       "priority": 17,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["wg-US-001"],
+      "blockedBy": [
+        "wg-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
@@ -318,11 +355,175 @@
       "priority": 18,
       "difficulty": "medium",
       "profile": "general",
-      "blockedBy": ["bi-US-001"],
+      "blockedBy": [
+        "bi-US-001"
+      ],
       "jiraKey": null,
       "repo": null,
       "passes": true,
       "notes": "feature: broker-integration"
+    },
+    {
+      "id": "fh-US-001",
+      "title": "Snapshot de NAV (valor total da carteira ao longo do tempo)",
+      "description": "Como investidor, quero que o InvestOS registre o valor total da minha carteira periodicamente, para acumular um historico que outras metricas possam usar.",
+      "acceptanceCriteria": [
+        "bin/nav-snapshot.sh <slug> calcula o valor total atual (reusa a mesma logica de valorizacao de bin/alocacao.sh) e grava/atualiza uma entrada do dia em <slug>/nav-historico.json (array de {data, valorTotal}).",
+        "Rodar duas vezes no mesmo dia atualiza a entrada existente daquele dia (sobrescreve com o valor mais recente) - idempotente, nao duplica.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 19,
+      "difficulty": "medium",
+      "profile": "general",
+      "blockedBy": [
+        "pr-US-001"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
+    },
+    {
+      "id": "fh-US-002",
+      "title": "Log de transacoes manual (aportes/resgates/compras/vendas)",
+      "description": "Como investidor, quero registrar aportes/resgates/compras/vendas manualmente, para que metricas de giro e retorno ponderado por dinheiro (MWR) tenham dado real.",
+      "acceptanceCriteria": [
+        "bin/transacao.sh <slug> registrar <tipo> <valor> [data] grava em <slug>/transacoes.json (array de {data, tipo, valor}), tipo em aporte|resgate|compra|venda; data default = hoje se omitida.",
+        "Tipo ou valor invalido e rejeitado com mensagem explicando o valor recebido e o esperado.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 20,
+      "difficulty": "low",
+      "profile": "general",
+      "blockedBy": [],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
+    },
+    {
+      "id": "fh-US-003",
+      "title": "Benchmark BR (Ibovespa via brapi.dev)",
+      "description": "Como investidor, quero consultar o historico do Ibovespa, para comparar minha carteira com o mercado brasileiro.",
+      "acceptanceCriteria": [
+        "bin/benchmark-quote.sh <slug> br consulta ^BVSP via bin/brapi-quote.sh (mesmo mecanismo de cache/token ja usado pra acoes BR), ate 3 meses de historico (limite do free tier).",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 21,
+      "difficulty": "low",
+      "profile": "general",
+      "blockedBy": [
+        "mdr-US-002"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas; validado por spikes/benchmark-nav.md"
+    },
+    {
+      "id": "fh-US-004",
+      "title": "Benchmark US (S&P 500 via yfinance, fallback nao-oficial)",
+      "description": "Como investidor, quero consultar o historico do S&P 500, para comparar minha carteira com o mercado americano, mesmo sem fonte oficial gratuita.",
+      "acceptanceCriteria": [
+        "bin/benchmark-quote.sh <slug> us usa BENCHMARK_QUOTE injetado (fallback documentado: yfinance ^GSPC, nao-oficial, sem quota garantida).",
+        "Sem BENCHMARK_QUOTE configurado, retorna erro claro dizendo que nao ha fonte oficial gratuita pro S&P 500 (gap documentado no spike, nao trava as demais metricas).",
+        "BENCHMARK_QUOTE e um override injetavel por variavel de ambiente (mesmo padrao de RISCO_HISTORY/ALOCACAO_QUOTE) - nao e o mecanismo de config declarativa (.mcp.json + .env).",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 22,
+      "difficulty": "medium",
+      "profile": "general",
+      "blockedBy": [],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas; validado por spikes/benchmark-nav.md"
+    },
+    {
+      "id": "fh-US-005",
+      "title": "Metricas de diagnostico sem historico novo (concentracao/DY/liquidez/exposicao cambial)",
+      "description": "Como investidor, quero ver concentracao por ativo, exposicao cambial, liquidez imediata e dividend yield 12m, calculados so do holdings.json atual, para diagnosticar a carteira sem esperar acumular historico.",
+      "acceptanceCriteria": [
+        "Relatorio reporta % concentrado no maior ativo, % por mercado (br/us), % em classes de liquidez D+0/D+1, e DY 12m por posicao quando disponivel via brapi (senao marca 'indisponivel' - nao inventa numero).",
+        "Nenhum limite recomendado (ex.: 'nao deveria passar de X%') aparece no output - so o numero, sem interpretacao prescritiva.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 23,
+      "difficulty": "medium",
+      "profile": "general",
+      "blockedBy": [
+        "pr-US-001"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
+    },
+    {
+      "id": "fh-US-006",
+      "title": "Beta, Alfa, R-quadrado e Tracking Error vs. benchmark",
+      "description": "Como investidor, quero ver Beta, Alfa, R-quadrado e Tracking Error da minha carteira contra o benchmark do mercado, para saber se o risco extra que corri valeu a pena.",
+      "acceptanceCriteria": [
+        "Calculado a partir dos retornos de nav-historico.json vs. o benchmark equivalente, no mesmo periodo.",
+        "Com menos pontos de historico do que o minimo estatisticamente sensato (ex.: 2 observacoes), reporta 'historico insuficiente' em vez de um numero instavel.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 24,
+      "difficulty": "high",
+      "profile": "specialist",
+      "blockedBy": [
+        "fh-US-001",
+        "fh-US-003",
+        "fh-US-004"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
+    },
+    {
+      "id": "fh-US-007",
+      "title": "TWR e MWR (retorno ponderado por tempo e por dinheiro)",
+      "description": "Como investidor, quero ver meu retorno ponderado pelo tempo (TWR) e ponderado pelo dinheiro (MWR), para separar a estrategia de investimento do timing dos meus aportes.",
+      "acceptanceCriteria": [
+        "TWR encadeia geometricamente os sub-periodos entre snapshots de nav-historico.json, isolando o efeito de aportes/resgates via transacoes.json.",
+        "MWR calculado como a taxa interna de retorno sobre os fluxos de transacoes.json + valor final.",
+        "Sem transacoes.json ou historico de NAV insuficiente, reporta 'dado insuficiente' em vez de calcular.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 25,
+      "difficulty": "high",
+      "profile": "specialist",
+      "blockedBy": [
+        "fh-US-001",
+        "fh-US-002"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
+    },
+    {
+      "id": "fh-US-008",
+      "title": "Sortino, giro de carteira e aliquota efetiva de IR",
+      "description": "Como investidor, quero ver o indice de Sortino, o giro da minha carteira e a aliquota efetiva de IR que venho pagando, para entender eficiencia alem do retorno bruto.",
+      "acceptanceCriteria": [
+        "Sortino calculado a partir de nav-historico.json (penaliza so desvio negativo).",
+        "Giro de carteira = soma de compras+vendas registradas em transacoes.json / valor medio da carteira no periodo.",
+        "Aliquota efetiva de IR = imposto pago / ganho realizado, ambos lidos de campos opcionais em transacoes.json - 'dado insuficiente' se nao registrados.",
+        "bash -n (scripts) / python3 -m py_compile (relatorios .py) passam."
+      ],
+      "priority": 26,
+      "difficulty": "medium",
+      "profile": "specialist",
+      "blockedBy": [
+        "fh-US-001",
+        "fh-US-002"
+      ],
+      "jiraKey": null,
+      "repo": null,
+      "passes": false,
+      "notes": "feature: historico-metricas"
     }
   ]
 }
