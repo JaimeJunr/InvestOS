@@ -10,6 +10,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_TEMPLATE="$REPO_ROOT/templates/skills"
+COMMANDS_TEMPLATE="$REPO_ROOT/templates/commands"
 
 slugify() {
   local input="$1" slug
@@ -61,7 +62,8 @@ case "$MERCADO" in
     ;;
 esac
 
-mkdir -p "$SLUG/_memoria" "$SLUG/.claude"
+mkdir -p "$SLUG/_memoria" "$SLUG/.claude/commands"
+cp "$COMMANDS_TEMPLATE/instalar.md" "$COMMANDS_TEMPLATE/status.md" "$SLUG/.claude/commands/"
 
 cat > "$SLUG/CLAUDE.md" <<EOF
 # $SLUG

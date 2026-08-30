@@ -326,3 +326,35 @@ assert_skill() {
   [ ! -e "acme/.mcp.json" ]
   ! grep -q 'PLAID_' "acme/.env"
 }
+
+@test "gera .claude/commands/instalar.md e status.md sempre, mesmo sem nenhum dominio habilitado" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.claude/commands/instalar.md" ]
+  [ -f "acme/.claude/commands/status.md" ]
+}
+
+@test "instalar.md referencia os 3 arquivos de dados do portfolio" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  grep -q "holdings.json" "acme/.claude/commands/instalar.md"
+  grep -q "alocacao-alvo.json" "acme/.claude/commands/instalar.md"
+  grep -q "watchlist-fundos.json" "acme/.claude/commands/instalar.md"
+}
+
+@test "instalar.md faz diagnostico de perfil/objetivos/reserva/custos antes de perguntar posicoes" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  grep -qi "perfil" "acme/.claude/commands/instalar.md"
+  grep -qi "conservador" "acme/.claude/commands/instalar.md"
+  grep -qi "reserva de emergencia" "acme/.claude/commands/instalar.md"
+  grep -q "perfil-investidor.json" "acme/.claude/commands/instalar.md"
+  grep -qi "prazo" "acme/.claude/commands/instalar.md"
+}
+
+@test "status.md e read-only: nao instrui escrever holdings.json nem alocacao-alvo.json" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.claude/commands/status.md" ]
+  ! grep -qiE "grav(e|ar)|escrev(a|er)|crie|atualiz(e|ar)" "acme/.claude/commands/status.md"
+}

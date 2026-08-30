@@ -2,3 +2,11 @@
 __pycache__/
 *.pyc
 
+# Ralph loop internals — noisy run state, not part of the published planning docs
+# (docs/produto/ already carries the readable version of prd.html/features/*.html/spikes/*)
+.ralph/*/.env
+.ralph/*/logs/
+.ralph/*/.last-branch
+.ralph/*/stop.md
+.ralph/tdr/
+
