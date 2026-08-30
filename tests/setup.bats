@@ -18,7 +18,7 @@ teardown() {
 }
 
 @test "cria estrutura padrao para portfolio novo" {
-  run "$SCRIPT" acme
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
   [ "$status" -eq 0 ]
   [ -f "acme/CLAUDE.md" ]
   [ -d "acme/_memoria" ]
@@ -30,14 +30,14 @@ teardown() {
 }
 
 @test "settings.json gerado com enabledPlugins vazio" {
-  run "$SCRIPT" acme
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
   [ "$status" -eq 0 ]
   run python3 -c "import json,sys; d=json.load(open('acme/.claude/settings.json')); sys.exit(0 if d.get('enabledPlugins') == {} else 1)"
   [ "$status" -eq 0 ]
 }
 
 @test "portfolio existente: sem confirmacao explicita, nao sobrescreve" {
-  "$SCRIPT" acme
+  printf 'n\nn\nn\nn\nBR\n' | "$SCRIPT" acme
   echo "SENTINELA" >> acme/CLAUDE.md
   run bash -c "echo n | '$SCRIPT' acme"
   [ "$status" -ne 0 ]
@@ -45,9 +45,9 @@ teardown() {
 }
 
 @test "portfolio existente: com confirmacao explicita (y), sobrescreve" {
-  "$SCRIPT" acme
+  printf 'n\nn\nn\nn\nBR\n' | "$SCRIPT" acme
   echo "SENTINELA" >> acme/CLAUDE.md
-  run bash -c "echo y | '$SCRIPT' acme"
+  run bash -c "printf 'y\nn\nn\nn\nn\nBR\n' | '$SCRIPT' acme"
   [ "$status" -eq 0 ]
   ! grep -q "SENTINELA" acme/CLAUDE.md
 }
@@ -85,6 +85,31 @@ d = json.load(open('acme/portfolio.json'))
 assert d['mercado'] == 'ambos', d
 "
   [ "$status" -eq 0 ]
+}
+
+@test "mercado aceita somente o enum com comparacao case-insensitive e normaliza para minusculas" {
+  index=0
+  for entry in "BR:br" "Br:br" "br:br" "US:us" "uS:us" "ambos:ambos" "AMBOS:ambos"; do
+    input="${entry%%:*}"
+    expected="${entry##*:}"
+    slug="portfolio-${input,,}-$index"
+    index=$((index + 1))
+
+    run bash -c "printf 'n\nn\nn\nn\n%s\n' '$input' | '$SCRIPT' '$slug'"
+    [ "$status" -eq 0 ]
+    run jq -e --arg expected "$expected" '.mercado == $expected' "$slug/portfolio.json"
+    [ "$status" -eq 0 ]
+  done
+}
+
+@test "mercado fora do enum e rejeitado com valor recebido e valores aceitos" {
+  run bash -c "printf 'n\nn\nn\nn\nbrasil\n' | '$SCRIPT' acme"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"brasil"* ]]
+  [[ "$output" == *"br"* ]]
+  [[ "$output" == *"us"* ]]
+  [[ "$output" == *"ambos"* ]]
+  [ ! -d "acme" ]
 }
 
 # Testes de wg-US-003: slug normalizado e validado na criacao.

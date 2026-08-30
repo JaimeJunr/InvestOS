@@ -47,7 +47,16 @@ for domain in "${DOMAINS[@]}"; do
   fi
 done
 
-read -r -p "Mercado (BR/US/ambos): " MERCADO || MERCADO=""
+read -r -p "Mercado (BR/US/ambos): " RAW_MERCADO || RAW_MERCADO=""
+MERCADO="${RAW_MERCADO,,}"
+
+case "$MERCADO" in
+  br | us | ambos) ;;
+  *)
+    echo "Mercado invalido: recebido '$RAW_MERCADO', esperado um de: br, us ou ambos (comparacao case-insensitive)." >&2
+    exit 1
+    ;;
+esac
 
 mkdir -p "$SLUG/_memoria" "$SLUG/.claude"
 

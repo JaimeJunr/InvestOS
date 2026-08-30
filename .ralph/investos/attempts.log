@@ -10,3 +10,9 @@
 [2026-08-30T00:06:58Z] wg-US-004 GATE 6 attempt 1: guarded-impl-loop mode=review-first -> TDR validated=yes mechanism=genuine (mutation testing manual em bin/setup.sh, revertida); aderencia PASS (qa-reviewer) com 2 LOW findings -> aplicado fix do LOW #1 (teste do AC1 era so-negativo/tautologico, reforcado com asserções positivas -f/-d); LOW #2 (slug com '/' permite portfolio aninhado) registrado como debito de backlog, fora do escopo desta story -> PASS
 [2026-08-29 21:08:07] pc-US-001 RED: 4 tests written, all failing as expected
 [2026-08-30 21:13:00] pc-US-001 GATE 6 attempt 1: TDR (tdr-runner, mutation testing 4x) -> genuine; aderencia (qa-reviewer) -> PASS com 2 findings LOW fora de escopo -> PASS
+[2026-08-29T21:35:46-03:00] wg-US-005 RED: 2 tests written, all failing as expected
+[2026-08-29T21:36:37-03:00] wg-US-005 GATE 1 attempt 1: 4 testes legados chamavam setup sem mercado valido e falharam sob o novo enum obrigatorio → fixtures atualizadas para fornecer BR explicitamente → FAIL
+[2026-08-29T21:37:37-03:00] wg-US-005 GATE 1 attempt 2: suite completa 22/22 → PASS
+[2026-08-29T21:37:37-03:00] wg-US-005 GATE 2 attempt 1: bash -n bin/setup.sh (substituto shellcheck indisponivel) → PASS
+[2026-08-29T21:37:37-03:00] wg-US-005 GATE 3 attempt 1: bash -n bin/setup.sh (substituto typecheck para Bash) → PASS
+[2026-08-29T21:37:37-03:00] wg-US-005 GATE 4 attempt 1: coverage n/a (Bash/Bats sem tooling ou threshold configurado) → PASS
