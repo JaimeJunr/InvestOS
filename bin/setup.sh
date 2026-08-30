@@ -71,7 +71,7 @@ rm -f "$SLUG/.mcp.json"
 
 if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   [ "$MERCADO" != "br" ]; then
-  printf 'ALPHA_VANTAGE_API_KEY=\n' > "$SLUG/.env"
+  printf 'ALPHA_VANTAGE_API_KEY=\n' >> "$SLUG/.env"
   jq -n '
     {
       "mcpServers": {
@@ -84,6 +84,11 @@ if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
   ' > "$SLUG/.mcp.json"
 fi
 
+if jq -e '.["dados-mercado"] == true' <<<"$ENABLED_PLUGINS" >/dev/null &&
+  [ "$MERCADO" != "us" ]; then
+  printf 'BRAPI_TOKEN=\n' >> "$SLUG/.env"
+fi
+
 jq -n --argjson plugins "$ENABLED_PLUGINS" \
   '{"$schema": "https://json.schemastore.org/claude-code-settings.json", "enabledPlugins": $plugins}' \
   > "$SLUG/.claude/settings.json"
@@ -92,6 +97,7 @@ jq -n --arg mercado "$MERCADO" '{mercado: $mercado}' > "$SLUG/portfolio.json"
 
 cat > "$SLUG/.gitignore" <<'EOF'
 .env
+_cache/
 EOF
 
 echo "Portfolio '$SLUG' criado em ./$SLUG"

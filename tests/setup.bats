@@ -195,5 +195,24 @@ assert beta == {'corretora-banco': True}, beta
   run bash -c "printf 'y\nn\nn\ny\nn\nbr\n' | '$SCRIPT' global"
   [ "$status" -eq 0 ]
   [ ! -e "global/.mcp.json" ]
-  [ ! -s "global/.env" ]
+  ! grep -q 'ALPHA_VANTAGE_API_KEY' "global/.env"
+}
+
+# Testes de mdr-US-002: setup integra o client brapi.dev (token + cache gitignorado).
+
+@test "dados-mercado + mercado br grava BRAPI_TOKEN vazio e ignora _cache/" {
+  run bash -c "printf 'n\nn\ny\nn\nbr\n' | '$SCRIPT' acme"
+  [ "$status" -eq 0 ]
+  grep -qx 'BRAPI_TOKEN=' "acme/.env"
+  grep -qx '_cache/' "acme/.gitignore"
+  [ ! -e "acme/.mcp.json" ]
+}
+
+@test "dados-mercado + mercado ambos grava Alpha Vantage e BRAPI_TOKEN" {
+  run bash -c "printf 'n\nn\ny\nn\nambos\n' | '$SCRIPT' global"
+  [ "$status" -eq 0 ]
+  grep -qx 'ALPHA_VANTAGE_API_KEY=' "global/.env"
+  grep -qx 'BRAPI_TOKEN=' "global/.env"
+  grep -qx '_cache/' "global/.gitignore"
+  [ -f "global/.mcp.json" ]
 }
