@@ -30,3 +30,5 @@
 [2026-08-30T01:15:00Z] mdr-US-002 GATE 2 attempt 1: bash -n bin/setup.sh bin/brapi-quote.sh tests/helpers/fake-brapi-http.sh → PASS
 [2026-08-30T01:15:00Z] mdr-US-002 GATE 3 attempt 1: bash -n (substituto typecheck para Bash) + jq empty catalog.json → PASS
 [2026-08-30T01:15:00Z] mdr-US-002 GATE 4 attempt 1: coverage n/a (Bash/Bats sem tooling ou threshold configurado) → PASS
+[2026-08-29T22:18:00-03:00] mdr-US-002 GATE 5 attempt 1: commit 2d67d5e criado → PASS
+[2026-08-29T22:21:14-03:00] mdr-US-002 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x cache/free/yfinance/token, 0 survivors; tdr independente concordou); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 6 LOW) → PASS

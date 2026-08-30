@@ -11,6 +11,7 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Padrao para prompts interativos em bin/*.sh sob `set -euo pipefail`: sempre `read -r -p "..." VAR || VAR=""` — sem o fallback, EOF de stdin (comum em testes bats/CI) mata o script por causa do set -e.
 - O campo `mercado` em portfolio.json usa o enum canonico lowercase `br|us|ambos`; o setup aceita variacao apenas de caixa, rejeita sinonimos e valida antes de criar os arquivos do portfolio.
 - MCP "integrado e funcional" (prd-update-1) = config declarativa: `<slug>/.mcp.json` + placeholder vazio no `<slug>/.env` (gitignorado). Testes assertam estrutura (jq/grep), nunca chamada de API. Sempre `rm -f "$SLUG/.mcp.json"` antes do if, para overwrite (ex. ambos→br) nao deixar MCP residual.
+- Client HTTP first-party (brapi.dev, sem MCP): `bin/*.sh` com GET injetavel via env (`BRAPI_HTTP_GET`), fake nomeado em `tests/helpers/`, nunca chamada de API real nos testes. Cache por portfolio em `<slug>/_cache/` (gitignorado). Credencial so no `<slug>/.env`, nunca no stdout. Fallback yfinance e documentacao, nao client.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -99,4 +100,16 @@ Started: sáb 29 ago 2026 19:31:33 -03
   - Catalogo declara `https://www.alphavantage.co/mcp/` (pagina); o endpoint MCP HTTP usado no `.mcp.json` e `https://mcp.alphavantage.co/mcp?apikey=...`. URL hardcoded no setup, nao lida de catalog.json (nit LOW do reviewer — lookup dinamico nao e AC).
   - GATE 6: tdr-runner e qa-reviewer nao resolvem como `subagent_type` neste harness Grok; despacho via general-purpose carregando o contrato dos agents do quati-revisor (mesmo precedente das iteracoes anteriores). Mutation testing no orquestrador (3 mutacoes, restore) + TDR independente + aderencia PASS.
 - GATE 1: tests passing (24/24) | GATE 2: lint clean (`bash -n`, shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n` / `jq empty catalog.json`) | GATE 4: coverage n/a (Bash/Bats sem tooling ou threshold) | GATE 5: committed at 5b038ee | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+---
+
+## 2026-08-29 22:21:14 -0300 - mdr-US-002
+- Implementado client first-party `bin/brapi-quote.sh`: cotacao BR via brapi.dev, cache em `<slug>/_cache/brapi/` (TTL 3600s, relogio injetavel via `BRAPI_NOW`), tickers livres PETR4/VALE3/MGLU3/ITUB4 sem token, demais exigem `BRAPI_TOKEN` no `<slug>/.env`. HTTP injetavel via `BRAPI_HTTP_GET` (fake nomeado nos testes). Setup grava placeholder + `_cache/` no gitignore quando dados-mercado + mercado br/ambos. Fallback yfinance `.SA` so documentado no usage.
+- Files changed: bin/brapi-quote.sh (novo), bin/setup.sh, tests/brapi.bats (novo), tests/helpers/fake-brapi-http.sh (novo), tests/setup.bats, .ralph/investos/attempts.log.
+- Resolution: read CLAUDE.md ausente; skills backend-testing (fake nomeado, sem rede) e security-best-practices (token fora de log/stdout); padrao bash de wg-US-001 + config .env de mdr-US-001. prd-update-1 (config declarativa) aplica so a MCP (mdr-US-001/bi-US-001); ACs desta story nao foram amendados — client proprio, testes mockam HTTP.
+- Learnings for future iterations:
+  - `BRAPI_HTTP_GET` + fake nomeado e o precedente de I/O HTTP neste repo (nao curl real em bats).
+  - Token na query string e o contrato da brapi; stdout fica limpo, mas `ps` ainda ve a URL no curl de producao (LOW registrado).
+  - GATE 6: tdr-runner/qa-reviewer nao resolvem como `subagent_type` neste harness Grok; despacho via general-purpose carregando o contrato (mesmo precedente de mdr-US-001). Mutation 4x (cache, free tickers, yfinance doc, token guard) todas killed; aderencia PASS com 6 LOW.
+- Achados LOW do qa-reviewer (nao-bloqueantes, backlog): (1) TTL expirado nao tem teste apesar do seam `BRAPI_NOW`; (2) cache HIT nao avisa idade do dado (FR da feature, fora do AC); (3) yfinance so no usage(), descoberta fraca; (4) teste de mercado `us` nao afirma ausencia de `BRAPI_TOKEN`; (5) token visivel em `ps` via query string; (6) falha HTTP nao tem caso de teste. Nenhum e X→Z.
+- GATE 1: tests passing (32/32) | GATE 2: lint clean (`bash -n`, shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n` / `jq empty catalog.json`) | GATE 4: coverage n/a (Bash/Bats sem tooling ou threshold) | GATE 5: committed at 2d67d5e | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
