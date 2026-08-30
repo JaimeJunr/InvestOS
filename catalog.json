@@ -16,19 +16,22 @@
           "name": "claude-trading-skills",
           "repo": "tradermonty/claude-trading-skills",
           "type": "skill",
-          "credencial": false
+          "credencial": false,
+          "disclaimer": "Credencial efetiva e variavel: depende da fonte de dados usada por baixo (ex.: yfinance publico vs. provedor pago); nao exigida no nucleo da skill."
         },
         {
           "name": "quant_investing_skills",
           "repo": "openalphalab/quant_investing_skills",
           "type": "skill",
-          "credencial": false
+          "credencial": false,
+          "disclaimer": "Credencial efetiva e variavel: depende da fonte de dados usada por baixo (ex.: yfinance publico vs. provedor pago); nao exigida no nucleo da skill."
         },
         {
           "name": "family-office",
           "repo": "acantrell0523/family-office",
           "type": "skill",
-          "credencial": false
+          "credencial": false,
+          "disclaimer": "Credencial efetiva e variavel: depende da fonte de dados usada por baixo (ex.: yfinance publico vs. provedor pago); nao exigida no nucleo da skill."
         }
       ]
     },
@@ -40,7 +43,8 @@
           "name": "quant_investing_skills",
           "repo": "openalphalab/quant_investing_skills",
           "type": "skill",
-          "credencial": false
+          "credencial": false,
+          "disclaimer": "Credencial efetiva e variavel: depende da fonte de dados usada por baixo (ex.: yfinance publico vs. provedor pago); nao exigida no nucleo da skill."
         }
       ]
     },

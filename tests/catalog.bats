@@ -30,3 +30,19 @@ setup() {
   run jq -e '.domains[] | select(.id == "dados-mercado") | .entries[] | select(.gap == true and (.credencial == false))' "$CATALOG"
   [ "$status" -eq 0 ]
 }
+
+# Testes de pc-US-002: entradas declaram credencial exigida (sim/nao) e as de
+# credencial variavel carregam disclaimer explicando a variabilidade.
+
+@test "entradas de dados-mercado e corretora-banco (nao-gap) exigem credencial" {
+  run jq -e '[.domains[] | select(.id == "dados-mercado" or .id == "corretora-banco") | .entries[] | select(.gap != true) | select(.credencial == true)] | length' "$CATALOG"
+  [ "$status" -eq 0 ]
+  total=$(jq '[.domains[] | select(.id == "dados-mercado" or .id == "corretora-banco") | .entries[] | select(.gap != true)] | length' "$CATALOG")
+  [ "$output" = "$total" ]
+}
+
+@test "entradas de research com credencial variavel declaram disclaimer explicito" {
+  run jq -e '[.domains[].entries[] | select(.name == "claude-trading-skills" or .name == "quant_investing_skills" or .name == "family-office") | select(.credencial == false and (.disclaimer | type == "string") and (.disclaimer | contains("vari")))] | length == 4' "$CATALOG"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+}
