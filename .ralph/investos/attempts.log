@@ -72,3 +72,5 @@
 [2026-08-30T00:03:21-03:00] bi-US-001 GATE 2 attempt 1: bash -n bin/setup.sh (substituto shellcheck indisponivel) → PASS
 [2026-08-30T00:03:21-03:00] bi-US-001 GATE 3 attempt 1: bash -n + python3 -m py_compile + jq empty catalog.json → PASS
 [2026-08-30T00:03:21-03:00] bi-US-001 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
+[2026-08-30T00:03:40-03:00] bi-US-001 GATE 5 attempt 1: commit a6b9ae5 criado → PASS
+[2026-08-30T00:15:00-03:00] bi-US-001 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 4x bloco-plaid/readOnly/transfer/merge, 0 survivors); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS

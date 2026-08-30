@@ -286,7 +286,7 @@
       "blockedBy": ["pc-US-001", "pr-US-001"],
       "jiraKey": null,
       "repo": null,
-      "passes": false,
+      "passes": true,
       "notes": "feature: broker-integration; AC amendada por prd-update-1.html"
     },
     {
