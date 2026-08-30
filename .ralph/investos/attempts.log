@@ -51,3 +51,5 @@
 [2026-08-29T23:04:42-03:00] pr-US-001 GATE 2 attempt 1: bash -n bin/alocacao.sh tests/helpers/fake-alocacao-quote.sh (substituto shellcheck) → PASS
 [2026-08-29T23:04:42-03:00] pr-US-001 GATE 3 attempt 1: bash -n + python3 -m py_compile bin/alocacao-report.py + jq empty catalog.json → PASS
 [2026-08-29T23:04:42-03:00] pr-US-001 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
+[2026-08-29T23:12:28-03:00] pr-US-001 GATE 5 attempt 1: commit 6cacbba criado → PASS
+[2026-08-29T23:12:28-03:00] pr-US-001 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (mutation 2x slice_report/HOLDINGS path, 0 survivors); aderencia PASS via qa-reviewer (APPROVE WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS
