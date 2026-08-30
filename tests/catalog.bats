@@ -46,3 +46,11 @@ setup() {
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
+
+# Teste de pc-US-003: gap de dados de mercado BR registrado explicitamente,
+# nao omitido e nao maquiado como "em breve".
+
+@test "gap BR de dados-mercado tem disclaimer visivel e nao maquiado como em breve" {
+  run jq -e '.domains[] | select(.id == "dados-mercado") | .entries[] | select(.gap == true) | select((.disclaimer | type == "string") and (.disclaimer | length > 0) and (.disclaimer | ascii_downcase | contains("em breve") | not))' "$CATALOG"
+  [ "$status" -eq 0 ]
+}
