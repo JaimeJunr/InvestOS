@@ -20,6 +20,7 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - MCP de corretora (bi-US-001): mesmo acumulador `MCP_SERVERS` do Alpha Vantage; `rm -f` + rewrite. Dominio `corretora-banco` grava server `plaid` (`command: plaid-mcp`, `type: stdio`, `readOnly: true`) e placeholders `PLAID_CLIENT_ID=`/`PLAID_SECRET=` no `.env`. Products so leitura (`transactions` + `investments`); sem transfer/payment/order. `readOnly` e sentinela de teste — o lock real e o MCP escolhido + products. IBKR no catalogo e skill, nao MCP.
 - Credencial de corretora (bi-US-002): `bin/credencial.sh <slug> has KEY` (allowlist `PLAID_CLIENT_ID`/`PLAID_SECRET`) le so `<slug>/.env` via grep/cut — nunca `source`, nunca env do processo, nunca imprime o valor. Placeholder vazio = ausente (exit 1). Config gerada continua com `${PLAID_*}` literal.
 - Fallback de corretora (bi-US-003): `bin/holdings-sync.sh` decide pelo `has` (nunca `get`). Sem credencial = no-op no `holdings.json` (manual). Com credencial, fetch via seam `HOLDINGS_FETCH` (MCP Plaid e declarativo, sem client HTTP). Falha/token: `warn_stale` + exit 0, sidecar `<slug>/_cache/plaid/meta.json` `{fetchedAt}`, nunca grava `posicoes: []`. Fake nomeado: `tests/helpers/fake-plaid-holdings.sh`.
+- Snapshot de NAV (fh-US-001): `bin/nav-snapshot.sh` delega a valorizacao integralmente a `bin/alocacao.sh`, extrai `.total` e faz upsert atomico por data local em `<slug>/nav-historico.json` (`[{data, valorTotal}]`) via temporario + `mv`; nunca duplica a data atual e preserva snapshots de outras datas.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -214,4 +215,13 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - GATE 1: tests passing (83/83) | GATE 2: lint clean (`bash -n`, shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n` / `python3 -m py_compile` / `jq empty catalog.json`) | GATE 4: coverage n/a (Bash/Bats/Python sem tooling ou threshold) | GATE 5: committed at 0327014 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
 
-
+## 2026-08-30 19:42 - fh-US-001
+- What was implemented: `bin/nav-snapshot.sh <slug>` reutiliza `bin/alocacao.sh`, extrai o valor total e grava o snapshot do dia em `nav-historico.json`; nova execucao no mesmo dia substitui o valor anterior sem duplicar, com escrita atomica.
+- Files changed: `bin/nav-snapshot.sh`, `tests/nav-snapshot.bats`, `.ralph/investos/attempts.log`, `.ralph/investos/prd.json`, `.ralph/investos/progress.txt`.
+- Resolution: lidos `CLAUDE.md`, `features/historico-metricas.html` e o precedente `bin/alocacao.sh`; a dependencia de alocacao definida no PRD resolveu o mecanismo sem duplicar a logica de valorizacao. `.claude/skills/` nao existe neste repo; usado `quati-revisor:guarded-impl-loop` no GATE 6. Cursor Bridge `explore`/`read_slice` falhou nesta sessao com `Reading additional input from stdin`; leitura focal seguiu por context-mode.
+- Learnings for future iterations:
+  - `nav-historico.json` e um array de `{data, valorTotal}` e o snapshot diario deve preservar outras datas, removendo apenas a entrada da data atual antes de acrescentar o valor mais recente.
+  - Reutilizar a saida `.total` de `alocacao.sh` mantem a mesma seam `ALOCACAO_QUOTE` e evita uma segunda implementacao de precificacao.
+  - GATE 6: TDR `validated=yes mechanism=genuine` nos dois ACs comportamentais; aderencia PASS. Sugestao LOW nao-bloqueante: adicionar futuramente um teste explicito que semeie data anterior e prove sua preservacao.
+- GATE 1: tests passing (108/108) | GATE 2: lint clean (n/a; nenhum linter configurado) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (sem tooling ou threshold) | GATE 5: committed at 11bb796 | GATE 6: guarded-impl-loop PASS
+---
