@@ -79,6 +79,7 @@ The practical consequence: every script that needs external market data or broke
 - `bin/diagnostico.sh` — reuses `ALOCACAO_QUOTE` for prices; DY 12m is read from brapi `dividendYield` (best-effort; missing/failed fetch becomes `"indisponivel"`)
 - `bin/holdings-sync.sh` — `HOLDINGS_FETCH`
 - `bin/benchmark-quote.sh` — `BENCHMARK_QUOTE` for US (`^GSPC`); the documented yfinance fallback is non-official and has no guaranteed quota
+- `bin/contra-benchmark.sh` — reuses `benchmark-quote.sh` (and therefore `BENCHMARK_QUOTE` for US); NAV series comes from `<slug>/nav-historico.json`, never from live quotes
 
 When the override is unset, these scripts fall back to the two BR data sources that *are* implemented directly (no MCP involved): `bin/brapi-quote.sh` (brapi.dev, for equities/ETFs/FIIs) and `bin/cvm-informe.sh` (CVM Dados Abertos CSV feed, for funds — a fund ticker is a 14-digit CNPJ, checked via `digits_only`/`is_cnpj` helpers). US/global data has no direct implementation; it only works through the injected override (i.e., through whatever consumes the declarative Alpha Vantage MCP config at runtime).
 
@@ -94,7 +95,7 @@ If the brokerage connection fails or the token expired, the script keeps the las
 
 ### Report scripts (bash driver + Python renderer)
 
-`alocacao.sh`, `risco.sh`, `diagnostico.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, and `alocacao-alvo.json` when the report needs a target), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation and prints the report. `diagnostico.sh` reads only the current snapshot (optional `liquidez` on each holding, `D+0`/`D+1`) and never invents DY or prints a recommended limit. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion.
+`alocacao.sh`, `risco.sh`, `diagnostico.sh`, `contra-benchmark.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, and `alocacao-alvo.json` when the report needs a target), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation and prints the report. `diagnostico.sh` reads only the current snapshot (optional `liquidez` on each holding, `D+0`/`D+1`) and never invents DY or prints a recommended limit. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion. `contra-benchmark.sh` reads `portfolio.json.mercado` to pick `^BVSP`/`^GSPC` (or both when `ambos`), aligns NAV snapshots to benchmark dates, and emits the string `historico insuficiente` instead of Beta/Alfa/R²/TE when fewer than 4 overlapping points remain.
 
 ### Skills (`templates/skills/`)
 
