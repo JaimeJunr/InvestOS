@@ -137,3 +137,9 @@
 [2026-08-30T21:35:00-0300] fh-US-007 GATE 5 attempt 1: commit f12fa9f criado → PASS
 [2026-08-30T21:35:00-0300] fh-US-007 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (AC1 CF=0 killed; AC2 mwr=twr killed; AC3 payload→0.0 killed; MIN_NAV-only foi fraco); aderencia PASS via qa-reviewer (APROVA WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS
 [2026-08-30T21:40:00-0300] fh-US-008 RED: 7 tests written, all failing as expected
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 1 attempt 1: suite Bats completa 146/146 verde, 0 falhas → PASS
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 2 attempt 1: git diff --check limpo; bash -n; shellcheck indisponivel conforme CLAUDE.md → PASS
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 3 attempt 1: bash -n + python3 -m py_compile bin/*.py + jq empty catalog.json → PASS
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 4 attempt 1: coverage n/a (Bash/Bats/Python sem tooling ou threshold configurado) → PASS
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 5 attempt 1: commit 4315556 criado → PASS
+[2026-08-30T21:46:00-0300] fh-US-008 GATE 6 attempt 1: guarded-impl-loop review-first → TDR validated=yes mechanism=genuine (M1 pstdev killed Sortino; M2 soma-tudo killed giro; M3 invent 0.0 killed IR ausente; MIN_NAV-only foi fraco); aderencia PASS via qa-reviewer (APROVA WITH SUGGESTIONS, 0 CRITICAL/HIGH/MEDIUM, 2 LOW) → PASS
