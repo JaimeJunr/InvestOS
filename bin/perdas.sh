@@ -20,7 +20,9 @@ tiver o campo opcional "precoMedio". Marca como candidato a tax-loss
 harvesting toda posicao com preco atual abaixo do precoMedio - informativo
 apenas, nunca recomenda vender nem calcula IR devido. BR via brapi-quote.sh;
 US/global exige PERDAS_QUOTE injetado (MCP Alpha Vantage e so config
-declarativa). Posicao sem precoMedio e listada a parte, sem calculo.
+declarativa). Posicao com precoManual usa esse valor direto, sem cotar
+externamente (ex.: Tesouro Direto). Posicao sem precoMedio e listada a
+parte, sem calculo.
 EOF
 }
 
@@ -82,8 +84,13 @@ while IFS= read -r row; do
   [ -n "$row" ] || continue
   ticker=$(jq -r '.ticker' <<<"$row" | tr '[:lower:]' '[:upper:]')
   mercado=$(jq -r '.mercado' <<<"$row" | tr '[:upper:]' '[:lower:]')
-  payload=$(quote_payload "$SLUG" "$ticker" "$mercado")
-  preco=$(jq -er '.preco' <<<"$payload")
+  preco_manual=$(jq -r '.precoManual // empty' <<<"$row")
+  if [ -n "$preco_manual" ]; then
+    preco="$preco_manual"
+  else
+    payload=$(quote_payload "$SLUG" "$ticker" "$mercado")
+    preco=$(jq -er '.preco' <<<"$payload")
+  fi
   QUOTES_MAP=$(jq --arg t "$ticker" --argjson p "$preco" '.[$t] = $p' <<<"$QUOTES_MAP")
 done < <(jq -c '.[]' <<<"$COM_PRECO")
 

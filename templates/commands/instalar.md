@@ -102,10 +102,20 @@ uma lista em texto livre (ex.: "100 PETR4 acoes br, 50 IVVB11 acoes br") em vez 
 por campo pra cada posição. Se o usuário não tiver nenhuma posição ainda, grave uma lista vazia —
 não invente posição.
 
+Se alguma posição **não tiver ticker cotável** (Tesouro Direto, CDB, debênture, qualquer renda
+fixa direta — mesmo que o usuário mencione um nome/código que não é símbolo de B3/bolsa), pergunte
+o valor unitário atual (do extrato) e grave como `precoManual`. Não tente inventar ou adivinhar um
+ticker de mercado pra esses — mesmo que a brapi tenha símbolos de Tesouro Direto reais, eles
+exigem plano pago; `precoManual` é o caminho que funciona sem custo. Deixe claro que o valor
+precisa ser atualizado manualmente (não é cotação ao vivo).
+
 Grave em `holdings.json`:
 
 ```json
-{"posicoes": [{"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"}]}
+{"posicoes": [
+  {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"},
+  {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74}
+]}
 ```
 
 ## Passo 2 — Alocação-alvo (`alocacao-alvo.json`)

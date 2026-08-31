@@ -204,3 +204,42 @@ PY
   [[ "$output" == *"us"* ]]
   [[ "$output" == *"esperado"* ]]
 }
+
+@test "posicao com precoManual entra no total sem chamar cotacao externa (renda fixa direta)" {
+  seed_portfolio acme
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"},
+        {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74},
+    ]
+}
+with open(f"{slug}/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1.0, "us": 0.0}}
+with open(f"{slug}/alocacao-alvo.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  python3 - "$ALOCACAO_QUOTE_PRICES" <<'PY'
+import json, sys
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump({"PETR4": 10}, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+assert abs(report["total"] - 5022.96) < 1e-6, report
+assert abs(report["porClasse"]["renda-fixa"]["valor"] - 4022.96) < 1e-6, report
+' "$output"
+  [ "$status" -eq 0 ]
+  ! grep -qi "ntn-b" "$ALOCACAO_QUOTE_LOG"
+}

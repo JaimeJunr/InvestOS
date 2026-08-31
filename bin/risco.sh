@@ -19,6 +19,8 @@ BR acoes/ETFs/FIIs via brapi-quote.sh (range=3mo, interval=1d);
 BR fundos (ticker CNPJ 14 digitos) via cvm-informe.sh; US/global exige
 RISCO_HISTORY injetado (MCP Alpha Vantage e so config declarativa).
 Ativo sem historico suficiente gera aviso e nao trava o relatorio.
+Posicao com precoManual (ex.: Tesouro Direto sem ticker cotavel) nao
+busca historico externo - entra direto como historico insuficiente.
 EOF
 }
 
@@ -82,15 +84,19 @@ history_payload() {
 
 collect_histories() {
   local slug="$1" holdings="$2" dest="$3"
-  local ticker mercado payload series
+  local ticker mercado preco_manual payload series
   series="{}"
   while IFS= read -r row; do
     [ -n "$row" ] || continue
     ticker=$(jq -r '.ticker' <<<"$row")
     mercado=$(jq -r '.mercado' <<<"$row")
+    preco_manual=$(jq -r '.precoManual // empty' <<<"$row")
+    if [ -n "$preco_manual" ]; then
+      continue
+    fi
     payload=$(history_payload "$slug" "$ticker" "$mercado")
     series=$(jq --arg t "$ticker" --argjson s "$payload" '.[$t] = $s' <<<"$series")
-  done < <(jq -c '.posicoes[] | {ticker: (.ticker|tostring|ascii_upcase), mercado: (.mercado|ascii_downcase)}' "$holdings")
+  done < <(jq -c '.posicoes[] | {ticker: (.ticker|tostring|ascii_upcase), mercado: (.mercado|ascii_downcase), precoManual: (.precoManual // null)}' "$holdings")
   printf '%s\n' "$series" > "$dest"
 }
 
@@ -107,7 +113,7 @@ if [ ! -d "$SLUG" ]; then
 fi
 
 HOLDINGS="$SLUG/holdings.json"
-require_file "$HOLDINGS" 'JSON {"posicoes": [{ticker, quantidade, classe, mercado}, ...]}'
+require_file "$HOLDINGS" 'JSON {"posicoes": [{ticker, quantidade, classe, mercado, precoManual?}, ...]}'
 
 HISTORY=$(mktemp)
 trap 'rm -f "$HISTORY"' EXIT

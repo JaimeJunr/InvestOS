@@ -16,10 +16,12 @@ Uso: bin/diagnostico.sh <slug>
 Reporta concentracao no maior ativo, exposicao por mercado (br/us),
 percentual em liquidez D+0/D+1 e dividend yield 12m por posicao.
 Posicoes em <slug>/holdings.json
-({"posicoes": [{"ticker","quantidade","classe","mercado","liquidez?"}]}).
+({"posicoes": [{"ticker","quantidade","classe","mercado","liquidez?","precoManual?"}]}).
 Campo liquidez e opcional (D+0 ou D+1). DY 12m vem da brapi quando o
 campo dividendYield existe; senao marca "indisponivel".
 Valoriza BR via brapi-quote.sh; US/global exige ALOCACAO_QUOTE injetado.
+Posicao com precoManual (ex.: Tesouro Direto) usa esse valor direto -
+DY 12m sempre "indisponivel" pra essas, sem tentar brapi.
 EOF
 }
 
@@ -83,14 +85,19 @@ append_quote() {
 
 collect_quotes() {
   local slug="$1" holdings="$2" dest="$3"
-  local tickers ticker mercado quotes
+  local tickers ticker mercado preco_manual quotes
   quotes="{}"
-  tickers=$(jq -c '.posicoes[] | {ticker: (.ticker|ascii_upcase), mercado: (.mercado|ascii_downcase)}' "$holdings")
+  tickers=$(jq -c '.posicoes[] | {ticker: (.ticker|ascii_upcase), mercado: (.mercado|ascii_downcase), precoManual: (.precoManual // null)}' "$holdings")
   while IFS= read -r row; do
     [ -n "$row" ] || continue
     ticker=$(jq -r '.ticker' <<<"$row")
     mercado=$(jq -r '.mercado' <<<"$row")
     if jq -e --arg t "$ticker" 'has($t)' <<<"$quotes" >/dev/null; then
+      continue
+    fi
+    preco_manual=$(jq -r '.precoManual // empty' <<<"$row")
+    if [ -n "$preco_manual" ]; then
+      quotes=$(jq --arg t "$ticker" --argjson p "$preco_manual" '.[$t] = {preco: $p}' <<<"$quotes")
       continue
     fi
     quotes=$(append_quote "$slug" "$ticker" "$mercado" "$quotes")

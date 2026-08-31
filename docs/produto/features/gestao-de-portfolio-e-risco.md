@@ -14,8 +14,19 @@ Compara a alocação atual do portfólio (a partir de `holdings.json`) com a alo
 pelo usuário em `alocacao-alvo.json`:
 
 ```json
-{"posicoes": [{"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"}]}
+{"posicoes": [
+  {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"},
+  {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74}
+]}
 ```
+
+`precoManual` (opcional) é o preço unitário pra posições **sem ticker cotável** — Tesouro Direto,
+CDB, debênture, qualquer renda fixa direta. Quando presente, o valor da posição é
+`quantidade × precoManual`, e **nenhum script tenta consultar cotação externa** pra esse ticker
+(nem brapi, nem histórico, nem dividend yield) — você atualiza o valor manualmente conforme o
+extrato. Sem isso, essas posições ficam de fora do cálculo de alocação por completo (é exatamente
+o gap que motivou o campo: o valor "some" da renda fixa e o desvio de alocação fica artificialmente
+enorme).
 
 ```json
 {"porClasse": {"acoes": 0.6, "renda-fixa": 0.4}, "porMercado": {"br": 0.7, "us": 0.3}, "threshold": 0.05}

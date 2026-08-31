@@ -15,7 +15,9 @@ Uso: bin/alocacao.sh <slug>
 
 Compara a alocacao atual do portfolio com a alocacao-alvo.
 Posicoes manuais em <slug>/holdings.json
-({"posicoes": [{"ticker","quantidade","classe","mercado"}]}).
+({"posicoes": [{"ticker","quantidade","classe","mercado","precoManual?"}]}).
+precoManual (opcional) e o preco unitario pra posicoes sem ticker cotavel
+(ex.: Tesouro Direto) - quando presente, nao tenta cotar externamente.
 Alvo em <slug>/alocacao-alvo.json
 ({"porClasse": {<classe>: peso}, "porMercado": {"br"|"us": peso}}, pesos somam 1).
 Valoriza BR via brapi-quote.sh; US/global exige ALOCACAO_QUOTE injetado
@@ -48,14 +50,19 @@ quote_payload() {
 
 collect_quotes() {
   local slug="$1" holdings="$2" dest="$3"
-  local tickers ticker mercado payload preco quotes
+  local tickers ticker mercado preco_manual payload preco quotes
   quotes="{}"
-  tickers=$(jq -c '.posicoes[] | {ticker: (.ticker|ascii_upcase), mercado: (.mercado|ascii_downcase)}' "$holdings")
+  tickers=$(jq -c '.posicoes[] | {ticker: (.ticker|ascii_upcase), mercado: (.mercado|ascii_downcase), precoManual: (.precoManual // null)}' "$holdings")
   while IFS= read -r row; do
     [ -n "$row" ] || continue
     ticker=$(jq -r '.ticker' <<<"$row")
     mercado=$(jq -r '.mercado' <<<"$row")
     if jq -e --arg t "$ticker" 'has($t)' <<<"$quotes" >/dev/null; then
+      continue
+    fi
+    preco_manual=$(jq -r '.precoManual // empty' <<<"$row")
+    if [ -n "$preco_manual" ]; then
+      quotes=$(jq --arg t "$ticker" --argjson p "$preco_manual" '.[$t] = $p' <<<"$quotes")
       continue
     fi
     payload=$(quote_payload "$slug" "$ticker" "$mercado")

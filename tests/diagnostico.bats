@@ -205,3 +205,33 @@ assert not isinstance(rows["AAPL"], (int, float)), rows
   [ "$status" -eq 0 ]
   assert_sem_prescricao "$output"
 }
+
+@test "posicao com precoManual entra na concentracao/mercado sem chamar cotacao ou DY externos, DY marca indisponivel" {
+  seed_portfolio acme
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"},
+        {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74},
+    ]
+}
+with open(f"{slug}/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  write_prices
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+assert abs(report["total"] - (1500 + 4022.96)) < 1e-6, report
+rows = {row["ticker"]: row["dividendYield"] for row in report["dividendYield12m"]}
+assert rows["NTN-B MAI/2055"] == "indisponivel", rows
+' "$output"
+  [ "$status" -eq 0 ]
+  ! grep -qi "ntn-b" "$ALOCACAO_QUOTE_LOG"
+  ! grep -qi "ntn-b" "$BRAPI_FETCH_LOG"
+}

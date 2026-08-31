@@ -85,6 +85,43 @@ assert abs(report["varConfianca"] - 0.95) < 1e-9, report
   [ "$status" -eq 0 ]
 }
 
+@test "posicao com precoManual nao busca historico externo, entra como historico insuficiente" {
+  seed_portfolio acme
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "PETR4", "quantidade": 1, "classe": "acoes", "mercado": "br"},
+            {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74},
+        ]
+    }, fh)
+with open("series.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "PETR4": [
+            {"date": "2026-01-02", "close": 100},
+            {"date": "2026-01-05", "close": 110},
+            {"date": "2026-01-06", "close": 100},
+            {"date": "2026-01-07", "close": 90},
+            {"date": "2026-01-08", "close": 100},
+        ],
+    }, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+tickers = {item["ticker"] for item in report["ativos"]}
+assert "NTN-B MAI/2055" in tickers, report
+manual = next(item for item in report["ativos"] if item["ticker"] == "NTN-B MAI/2055")
+assert manual["incluido"] is False, manual
+' "$output"
+  [ "$status" -eq 0 ]
+  ! grep -qi "ntn-b" "$RISCO_HISTORY_LOG"
+}
+
 @test "historico insuficiente gera aviso explicito e nao trava nem omite o ativo" {
   seed_portfolio acme
   python3 - <<'PY'

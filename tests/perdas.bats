@@ -135,6 +135,33 @@ assert report["posicoesSemPrecoMedio"] == ["AAPL"], report
   [ "$status" -eq 0 ]
 }
 
+@test "posicao com precoManual + precoMedio calcula ganho/perda sem chamar cotacao externa" {
+  seed_portfolio acme
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "posicoes": [
+        {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoMedio": 950.0, "precoManual": 1005.74},
+    ]
+}
+with open(f"{slug}/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+by_ticker = {p["ticker"]: p for p in report["posicoes"]}
+ntnb = by_ticker["NTN-B MAI/2055"]
+assert ntnb["precoAtual"] == 1005.74, ntnb
+assert ntnb["perdaNaoRealizada"] is False, ntnb
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
 @test "portfolio invalido ou holdings ausente e rejeitado com mensagem clara" {
   run "$SCRIPT" nao-existe
   [ "$status" -ne 0 ]
