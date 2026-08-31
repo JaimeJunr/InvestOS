@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Relatorio de proventos recebidos: totais, por ticker/classe/tipo, DY realizado 12m.
+# Opcionalmente inclui proventos provisionados (anunciados, ainda nao pagos).
 #
 # Uso:
 #   bin/proventos-relatorio.sh <slug>
@@ -16,7 +17,10 @@ Resume os proventos registrados em <slug>/proventos.json: total bruto/liquido,
 retido na fonte, agrupado por ticker/classe/tipo, e dividend yield realizado
 nos ultimos 12 meses (proventos liquidos do periodo / NAV medio do periodo,
 via <slug>/nav-historico.json - "dado insuficiente" sem historico
-suficiente). Informativo apenas - nao calcula Imposto de Renda devido.
+suficiente). Se <slug>/proventos-provisionados.json existir, inclui tambem
+provisionadoProximos12m e dyProjetado12m (liquido realizado 12m + bruto
+provisionado dos proximos 12m / NAV medio). Informativo apenas - nao calcula
+Imposto de Renda devido.
 EOF
 }
 
@@ -44,8 +48,13 @@ PROVENTOS="$SLUG/proventos.json"
 require_file "$PROVENTOS" '[{"ticker","tipo","classe","valorBruto","valorLiquido","data"}, ...]'
 
 NAV="$SLUG/nav-historico.json"
+PROVISIONADOS="$SLUG/proventos-provisionados.json"
+
+args=("$PROVENTOS")
 if [ -f "$NAV" ]; then
-  python3 "$SCRIPT_DIR/proventos-relatorio-report.py" "$PROVENTOS" "$NAV"
-else
-  python3 "$SCRIPT_DIR/proventos-relatorio-report.py" "$PROVENTOS"
+  args+=("$NAV")
 fi
+if [ -f "$PROVISIONADOS" ]; then
+  args+=("$PROVISIONADOS")
+fi
+python3 "$SCRIPT_DIR/proventos-relatorio-report.py" "${args[@]}"

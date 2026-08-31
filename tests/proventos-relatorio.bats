@@ -132,3 +132,96 @@ assert "nao" in aviso and ("imposto" in aviso or "ir" in aviso), report
 ' "$output"
   [ "$status" -eq 0 ]
 }
+
+@test "sem proventos-provisionados.json o relatorio nao ganha campos novos" {
+  seed_portfolio acme
+  write_proventos acme
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+assert "provisionadoProximos12m" not in report, report
+assert "dyProjetado12m" not in report, report
+assert "avisoProjecao" not in report, report
+assert set(report.keys()) == {
+    "totalBruto", "totalLiquido", "retidoNaFonte",
+    "porTicker", "porClasse", "porTipo",
+    "dyRealizado12m", "avisoLegal",
+}, report
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "com provisionados e nav, dyProjetado12m soma liquido realizado + bruto provisionado da janela" {
+  seed_portfolio acme
+  write_proventos acme
+  python3 - acme <<'PY'
+import json, sys
+from datetime import date, timedelta
+slug = sys.argv[1]
+hoje = date.today()
+nav = [
+    {"data": (hoje - timedelta(days=300)).isoformat(), "valorTotal": 10000.0},
+    {"data": (hoje - timedelta(days=150)).isoformat(), "valorTotal": 11000.0},
+    {"data": hoje.isoformat(), "valorTotal": 12000.0},
+]
+with open(f"{slug}/nav-historico.json", "w", encoding="utf-8") as fh:
+    json.dump(nav, fh)
+provisionados = [
+    {"ticker": "EGIE3", "tipo": "dividendo", "classe": "acoes", "valorBruto": 1.20, "dataPrevisao": (hoje + timedelta(days=30)).isoformat()},
+]
+with open(f"{slug}/proventos-provisionados.json", "w", encoding="utf-8") as fh:
+    json.dump(provisionados, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+assert abs(report["provisionadoProximos12m"]["totalBruto"] - 1.20) < 1e-9, report
+assert abs(report["provisionadoProximos12m"]["porTicker"]["EGIE3"]["bruto"] - 1.20) < 1e-9, report
+assert abs(report["provisionadoProximos12m"]["porClasse"]["acoes"]["bruto"] - 1.20) < 1e-9, report
+assert abs(report["provisionadoProximos12m"]["porTipo"]["dividendo"]["bruto"] - 1.20) < 1e-9, report
+assert isinstance(report["dyProjetado12m"], float), report
+expected = (9.33 + 1.20) / 11000.0
+assert abs(report["dyProjetado12m"] - expected) < 1e-9, (report["dyProjetado12m"], expected)
+assert report["dyProjetado12m"] > report["dyRealizado12m"], report
+aviso = report["avisoProjecao"].lower()
+assert "projec" in aviso
+assert "bruto" in aviso
+assert "nao pago" in aviso or "nao realizado" in aviso or "ainda nao" in aviso
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "provisionado com dataPrevisao fora da janela de 12 meses futuros nao conta em provisionadoProximos12m" {
+  seed_portfolio acme
+  write_proventos acme
+  python3 - acme <<'PY'
+import json, sys
+from datetime import date, timedelta
+slug = sys.argv[1]
+hoje = date.today()
+payload = [
+    {"ticker": "EGIE3", "tipo": "dividendo", "classe": "acoes", "valorBruto": 1.20, "dataPrevisao": (hoje + timedelta(days=10)).isoformat()},
+    {"ticker": "VALE3", "tipo": "dividendo", "classe": "acoes", "valorBruto": 99.0, "dataPrevisao": (hoje + timedelta(days=366)).isoformat()},
+    {"ticker": "PETR4", "tipo": "jcp", "classe": "acoes", "valorBruto": 50.0, "dataPrevisao": (hoje - timedelta(days=1)).isoformat()},
+]
+with open(f"{slug}/proventos-provisionados.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+assert abs(report["provisionadoProximos12m"]["totalBruto"] - 1.20) < 1e-9, report
+assert "VALE3" not in report["provisionadoProximos12m"]["porTicker"], report
+assert "PETR4" not in report["provisionadoProximos12m"]["porTicker"], report
+assert "EGIE3" in report["provisionadoProximos12m"]["porTicker"], report
+' "$output"
+  [ "$status" -eq 0 ]
+}

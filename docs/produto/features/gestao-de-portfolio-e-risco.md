@@ -49,7 +49,7 @@ Compara o desvio atual contra o `threshold` configurado em `alocacao-alvo.json` 
 1]`). Se o desvio ultrapassar o limite, sugere quantidades a comprar/vender por ticker — texto
 apenas. **Nunca envia ordem, nunca chama corretora, nunca grava `holdings.json`.**
 
-## Proventos (`bin/provento.sh`, `bin/proventos-relatorio.sh`)
+## Proventos (`bin/provento.sh`, `bin/provento-provisionado.sh`, `bin/proventos-relatorio.sh`)
 
 Registra dividendos/JCP/rendimentos recebidos em `<slug>/proventos.json`, pra sempre ficarem
 persistidos (diferente de proventos reinvestidos, que só "aparecem" indiretamente no
@@ -65,9 +65,19 @@ persistidos (diferente de proventos reinvestidos, que só "aparecem" indiretamen
   eventos do arquivo que o usuário fornecer e montar o array antes de chamar `importar`.
   Idempotente (reimportar o mesmo extrato não duplica) e all-or-nothing (um evento inválido rejeita
   o arquivo inteiro).
+- **`bin/provento-provisionado.sh`** — o mesmo par `registrar` / `importar`, mas grava em
+  `<slug>/proventos-provisionados.json`: dividendos/JCP/rendimentos **já anunciados** pela empresa
+  com pagamento futuro ainda não realizado (extrato B3: "Provisionado" / "Previsão de pagamento").
+  Schema sem `valorLiquido` (retenção só é conhecida no pagamento real); `dataPrevisao`
+  (`AAAA-MM-DD`) é obrigatória, sem default de hoje. **Nunca misturar com `proventos.json`** — isso
+  distorceria o DY realizado com dinheiro que ainda não caiu na conta.
 - **`bin/proventos-relatorio.sh <slug>`** — totais bruto/líquido/retido na fonte, agrupado por
   ticker/classe/tipo, e dividend yield realizado 12 meses (proventos líquidos do período / NAV
   médio do período, via `nav-historico.json` — "dado insuficiente" sem histórico suficiente).
+  Quando `proventos-provisionados.json` existe, inclui também `provisionadoProximos12m` (bruto
+  anunciado com `dataPrevisao` entre hoje e hoje+365 dias) e `dyProjetado12m` (líquido já recebido
+  nos últimos 12 meses + bruto provisionado dos próximos 12 meses / mesmo NAV médio) — projeção,
+  não garantia; o valor anunciado pode ser alterado ou cancelado até a data de pagamento.
   **Informativo apenas — não calcula Imposto de Renda devido.**
 
 ## Extratos B3 (Negociação, Eventos, Ofertas Públicas)
