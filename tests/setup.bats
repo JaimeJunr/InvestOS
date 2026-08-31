@@ -21,12 +21,14 @@ teardown() {
   run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]
   [ -f "acme/CLAUDE.md" ]
-  [ -d "acme/_memoria" ]
+  [ -d "acme/relatorios" ]
   [ -f "acme/.env" ]
   [ ! -s "acme/.env" ]
   [ -f "acme/.claude/settings.json" ]
   [ -f "acme/.gitignore" ]
   grep -qx ".env" "acme/.gitignore"
+  grep -qx "relatorios/" "acme/.gitignore"
+  grep -qx "analises/" "acme/.gitignore"
 }
 
 @test "settings.json gerado com enabledPlugins vazio" {
@@ -136,18 +138,18 @@ assert d['mercado'] == 'ambos', d
 
 # Testes de wg-US-004: isolamento entre portfolios gerados lado a lado.
 
-@test "dois portfolios nao compartilham _memoria nem .env" {
+@test "dois portfolios nao compartilham relatorios nem .env" {
   bash -c "printf 'y\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
   bash -c "printf 'n\nn\nn\ny\nUS\n' | '$SCRIPT' ./beta"
 
   echo "SEGREDO-ACME" > acme/.env
-  echo "MEMORIA-ACME" > acme/_memoria/nota.md
+  echo "RELATORIO-ACME" > acme/relatorios/nota.txt
 
   [ -f "beta/.env" ]
-  [ -d "beta/_memoria" ]
+  [ -d "beta/relatorios" ]
   grep -q "PLAID_" "beta/.env"
   ! grep -q "SEGREDO-ACME" "beta/.env"
-  [ ! -e "beta/_memoria/nota.md" ]
+  [ ! -e "beta/relatorios/nota.txt" ]
 }
 
 @test "cada portfolio tem seu proprio settings.json com enabledPlugins independente" {

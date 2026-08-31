@@ -63,10 +63,18 @@ The entry point. Given a name or path, it:
    respected literally (dirname preserved, basename slugified), `~` expanded against `$HOME`.
 2. Slugifies and validates the name component (`^[a-z0-9][a-z0-9/-]{0,78}[a-z0-9]$`, no `//` or `..`).
 3. Asks interactively which domains to enable (`research`, `risco`, `dados-mercado`, `corretora-banco`) and which market (`br`, `us`, `ambos` — this exact 3-value enum, case-insensitive, no synonym mapping).
-4. Writes an isolated portfolio folder: `CLAUDE.md`, `_memoria/`, `.env` (empty, gitignored), `.claude/settings.json` (`enabledPlugins`), `.claude/skills/` (copied from `templates/skills/`, chosen by domain+market), `.claude/commands/instalar.md` + `status.md` (copied from `templates/commands/`, always — see "Creating a new portfolio" above), `.mcp.json` (only when an MCP-backed domain is enabled), `portfolio.json` (`{"mercado": ...}`).
+4. Writes an isolated portfolio folder: `CLAUDE.md` (includes guidance on using Claude Code's own native memory for durable investor facts, plus the `analises/`/`relatorios/` conventions below), `relatorios/` (empty, gitignored — formal PDF/XML reports the agent generates on request), `.env` (empty, gitignored), `.claude/settings.json` (`enabledPlugins`), `.claude/skills/` (copied from `templates/skills/`, chosen by domain+market), `.claude/commands/instalar.md` + `status.md` (copied from `templates/commands/`, always — see "Creating a new portfolio" above), `.mcp.json` (only when an MCP-backed domain is enabled), `portfolio.json` (`{"mercado": ...}`).
 5. Refuses to overwrite an existing portfolio without an explicit `y` confirmation.
 
-Two portfolios never share `_memoria/`, `.env`, or `.claude/settings.json` — each is fully self-contained.
+Two portfolios never share `relatorios/`, `.env`, or `.claude/settings.json` — each is fully self-contained.
+
+`analises/` (ad-hoc JSON snapshots of one-off computed analyses, e.g. return-per-asset rankings)
+is **not** created by `setup.sh` — the agent creates it on demand when asked to save an analysis,
+same spirit as `relatorios/`: InvestOS reserves the gitignored slot, generating the content is the
+agent's job (mirrors the "reading a statement is the agent's job" convention from the `proventos`
+skill). Durable facts about the investor (risk profile nuances, known biases, sell/consolidation
+plans) belong in Claude Code's own native memory (when available), not a bespoke InvestOS file
+format — there is no `_memoria/` anymore.
 
 ### Declarative MCP, no first-party HTTP client (core convention)
 

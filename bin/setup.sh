@@ -84,13 +84,27 @@ case "$MERCADO" in
     ;;
 esac
 
-mkdir -p "$TARGET_DIR/_memoria" "$TARGET_DIR/.claude/commands"
+mkdir -p "$TARGET_DIR/relatorios" "$TARGET_DIR/.claude/commands"
 cp "$COMMANDS_TEMPLATE/instalar.md" "$COMMANDS_TEMPLATE/status.md" "$TARGET_DIR/.claude/commands/"
 
 cat > "$TARGET_DIR/CLAUDE.md" <<EOF
 # $SLUG
 
 Portfolio InvestOS. Configure dominios e mercado via setup interativo.
+
+## Memoria e relatorios
+
+Use a memoria nativa do Claude Code (quando disponivel nesta maquina) pra lembrar fatos
+duraveis sobre o investidor entre sessoes - perfil de risco, vieses conhecidos, planos de
+venda/consolidacao - em vez de inventar um arquivo proprio pra isso.
+
+Analises pontuais (ex.: retorno por ativo, ranking de rentabilidade) sao trabalho seu, nao
+do InvestOS - salve como JSON versionavel em analises/ (crie se nao existir), com a
+metodologia explicada dentro do proprio arquivo pra nao ser confundido com dado oficial dos
+scripts bin/*.sh.
+
+Relatorios formais que o investidor pediu pra guardar (PDF, XML) vao em relatorios/ -
+formatar o documento tambem e trabalho seu, o InvestOS so reserva o lugar.
 EOF
 
 : > "$TARGET_DIR/.env"
@@ -161,6 +175,8 @@ fi
 cat > "$TARGET_DIR/.gitignore" <<'EOF'
 .env
 _cache/
+relatorios/
+analises/
 EOF
 
 cat <<EOF

@@ -11,7 +11,8 @@ invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 ```
 <portfolio>/
 ├── CLAUDE.md
-├── _memoria/
+├── relatorios/           # opcional — relatorios formais (PDF/XML) que o agente gera sob pedido, gitignored
+├── analises/             # opcional — snapshots JSON de analises ad-hoc do agente, gitignored (nao criado por setup.sh)
 ├── .env                  # credenciais, gitignored
 ├── .mcp.json             # config declarativa de MCP (Alpha Vantage, Plaid) — condicional
 ├── .claude/
@@ -26,9 +27,19 @@ invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 ├── nav-historico.json     # opcional — série de valor total, um snapshot por dia
 ├── transacoes.json       # opcional — log manual de aportes/resgates/compras/vendas
 ├── proventos.json         # opcional — log de dividendos/JCP/rendimentos recebidos
+├── proventos-provisionados.json # opcional — anunciados, ainda nao pagos (DY projetado)
 ├── negociacoes.json       # opcional — log de compras/vendas (extrato B3 Negociação)
 └── eventos-corporativos.json # opcional — log informativo de eventos corporativos B3
 ```
+
+## Memória entre sessões
+
+InvestOS não tem um esquema de memória próprio (não existe mais um `_memoria/`). Fatos duráveis
+sobre o investidor — perfil de risco, vieses conhecidos, planos de venda/consolidação — usam a
+memória nativa do Claude Code (quando disponível na máquina do usuário), escopada automaticamente
+pelo diretório do portfólio como projeto. `analises/` (snapshots JSON de análises pontuais) e
+`relatorios/` (documentos formais em PDF/XML) são convenções de diretório, não um sistema de
+memória — o agente decide o conteúdo, o InvestOS só reserva o lugar.
 
 ## O padrão declarativo
 

@@ -34,9 +34,9 @@ existente pede confirmação explícita antes de sobrescrever — nada é perdid
 ```
 minha-carteira/
 ├── CLAUDE.md
-├── _memoria/
+├── relatorios/                # vazio, gitignored — relatorios formais (PDF/XML) gerados sob pedido
 ├── .env                      # vazio, gitignored — credenciais entram aqui manualmente
-├── .gitignore                # já inclui .env e _cache/
+├── .gitignore                # já inclui .env, _cache/, relatorios/ e analises/
 ├── .mcp.json                 # só se algum domínio com MCP foi habilitado
 ├── .claude/
 │   ├── settings.json         # enabledPlugins por domínio escolhido
@@ -64,6 +64,15 @@ que isso precisou de uma iteração de PRD depois da primeira implementação.
 
 ## Isolamento entre portfólios
 
-Dois portfólios gerados lado a lado nunca compartilham `_memoria/`, `.env` ou
+Dois portfólios gerados lado a lado nunca compartilham `relatorios/`, `.env` ou
 `.claude/settings.json`. A estrutura já suporta N portfólios simultâneos — o v1 só não exige que
 mais de um esteja de fato populado com dados reais.
+
+## Memória e documentos gerados pelo agente
+
+Não existe mais um `_memoria/` próprio do InvestOS. Fatos duráveis sobre o investidor (perfil,
+vieses, planos de venda) usam a memória nativa do Claude Code, quando disponível — escopada
+automaticamente pelo diretório do portfólio, sem nenhuma configuração do `setup.sh`. `analises/`
+(snapshots JSON de análises pontuais, criado pelo agente sob demanda, não pelo `setup.sh`) e
+`relatorios/` (documentos formais em PDF/XML, criado vazio pelo `setup.sh`) são só convenções de
+onde guardar — gerar o conteúdo é sempre trabalho do agente, nunca de um script `bin/*.sh`.
