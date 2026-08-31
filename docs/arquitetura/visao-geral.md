@@ -24,7 +24,8 @@ invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 ├── watchlist-fundos.json # opcional — fundos de interesse para o parser da CVM
 ├── perfil-investidor.json # diagnóstico do /instalar (perfil de risco, objetivos, ultimaRevisao)
 ├── nav-historico.json     # opcional — série de valor total, um snapshot por dia
-└── transacoes.json       # opcional — log manual de aportes/resgates/compras/vendas
+├── transacoes.json       # opcional — log manual de aportes/resgates/compras/vendas
+└── proventos.json         # opcional — log de dividendos/JCP/rendimentos recebidos
 ```
 
 ## O padrão declarativo

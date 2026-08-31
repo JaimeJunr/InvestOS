@@ -48,3 +48,24 @@ um aviso explícito de limitação — nunca trava nem omite o ativo em silênci
 Compara o desvio atual contra o `threshold` configurado em `alocacao-alvo.json` (fração em `(0,
 1]`). Se o desvio ultrapassar o limite, sugere quantidades a comprar/vender por ticker — texto
 apenas. **Nunca envia ordem, nunca chama corretora, nunca grava `holdings.json`.**
+
+## Proventos (`bin/provento.sh`, `bin/proventos-relatorio.sh`)
+
+Registra dividendos/JCP/rendimentos recebidos em `<slug>/proventos.json`, pra sempre ficarem
+persistidos (diferente de proventos reinvestidos, que só "aparecem" indiretamente no
+`nav-historico.json` quando o patrimônio cresce).
+
+- **`bin/provento.sh <slug> registrar <ticker> <tipo> <classe> <valorBruto> <valorLiquido> [data]`**
+  — um evento por vez. `tipo` ∈ `dividendo | jcp | rendimento`. `valorLiquido` nunca pode ser maior
+  que `valorBruto` (a retenção na fonte é a diferença).
+- **`bin/provento.sh <slug> importar <arquivo.json>`** — em lote, a partir de um array já no
+  formato canônico. **Ler o extrato da corretora (XLSX, PDF, CSV, o que for) é trabalho do agente,
+  não do InvestOS** — não existe parser de layout de corretora no código; a skill
+  [`proventos`](../../../templates/skills/proventos/SKILL.md) instrui o agente a extrair os
+  eventos do arquivo que o usuário fornecer e montar o array antes de chamar `importar`.
+  Idempotente (reimportar o mesmo extrato não duplica) e all-or-nothing (um evento inválido rejeita
+  o arquivo inteiro).
+- **`bin/proventos-relatorio.sh <slug>`** — totais bruto/líquido/retido na fonte, agrupado por
+  ticker/classe/tipo, e dividend yield realizado 12 meses (proventos líquidos do período / NAV
+  médio do período, via `nav-historico.json` — "dado insuficiente" sem histórico suficiente).
+  **Informativo apenas — não calcula Imposto de Renda devido.**

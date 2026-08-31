@@ -252,6 +252,20 @@ assert_skill() {
   assert_skill "global/.claude/skills/research-us/SKILL.md" "research-us" "alpha-vantage"
 }
 
+@test "dominio risco instala rebalanceamento e proventos juntos" {
+  run bash -c "printf 'n\ny\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.claude/skills/rebalanceamento/SKILL.md" ]
+  [ -f "acme/.claude/skills/proventos/SKILL.md" ]
+}
+
+@test "sem dominio risco nao instala rebalanceamento nem proventos" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  [ ! -e "acme/.claude/skills/rebalanceamento" ]
+  [ ! -e "acme/.claude/skills/proventos" ]
+}
+
 @test "sem dominio research nao instala skill mesmo com dados-mercado" {
   run bash -c "printf 'n\nn\ny\nn\nbr\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]
