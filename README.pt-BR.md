@@ -20,8 +20,8 @@ pequenos negócios), mas para investimento pessoal.
 - **Cura plugins/MCPs externos** em vez de construir tudo do zero — ver
   [`catalog.json`](catalog.json).
 - **Cobre dados de mercado brasileiro diretamente** ([brapi.dev](https://brapi.dev) para
-  ações/ETFs/FIIs, [CVM Dados Abertos](https://dados.cvm.gov.br) para fundos) — não existia MCP
-  público pronto para isso, então o InvestOS implementa.
+  ações/ETFs/FIIs, [CVM Dados Abertos](https://dados.cvm.gov.br) para fundos, BCB SGS para
+  Selic/CDI) — não existia MCP público pronto para isso, então o InvestOS implementa.
 - **Calcula métricas de risco reais** — VaR histórico, Sharpe, max drawdown, desvio de alocação,
   sugestão de rebalanceamento — nunca executa uma ordem.
 - **Lê posições de corretora em modo read-only** via MCP declarativo (Plaid / Interactive

@@ -19,8 +19,8 @@ small businesses), but for personal investing.
 - **Curates external plugins/MCPs** instead of building everything from scratch — see
   [`catalog.json`](catalog.json).
 - **Covers Brazilian market data directly** ([brapi.dev](https://brapi.dev) for stocks/ETFs/FIIs,
-  [CVM Dados Abertos](https://dados.cvm.gov.br) for funds) — no ready-made public MCP existed for
-  this, so InvestOS implements it.
+  [CVM Dados Abertos](https://dados.cvm.gov.br) for funds, BCB SGS for Selic/CDI) — no ready-made
+  public MCP existed for this, so InvestOS implements it.
 - **Computes real risk metrics** — historical VaR, Sharpe ratio, max drawdown, allocation drift,
   rebalancing suggestions — never executes an order.
 - **Reads brokerage positions read-only** via a declarative MCP (Plaid / Interactive Brokers),

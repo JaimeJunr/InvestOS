@@ -8,9 +8,9 @@
 
 Como nenhum plugin de terceiro cobre dados de mercado brasileiro (ver o
 [gap registrado no catálogo](catalogo-de-plugins.md#o-gap-de-dados-br)), esta feature resolve isso
-diretamente, sobre duas fontes públicas e gratuitas — validadas por um spike técnico antes de
+diretamente, sobre três fontes públicas e gratuitas — validadas por um spike técnico antes de
 qualquer linha de código (a API oficial da B3 é B2B-only, e a ANBIMA Feed API é paga; ambas foram
-descartadas em favor das duas fontes abaixo):
+descartadas em favor das fontes abaixo):
 
 - **Ações, ETFs e FIIs:** [`bin/brapi-quote.sh`](../../../bin/brapi-quote.sh), via a
   [API v2 da brapi.dev](https://brapi.dev) (free tier, 15.000 requisições/mês; endpoints
@@ -20,6 +20,10 @@ descartadas em favor das duas fontes abaixo):
 - **Fundos:** [`bin/cvm-informe.sh`](../../../bin/cvm-informe.sh), via o Informe Diário de Fundos
   da [CVM Dados Abertos](https://dados.cvm.gov.br) (CSV/ZIP público, atualização diária, sem
   login). O ticker de um fundo é o CNPJ de 14 dígitos.
+
+Para contexto macroeconômico, [`bin/macro-brasil.sh`](../../../bin/macro-brasil.sh) consulta Selic
+e CDI na API SGS do [Banco Central do Brasil](https://api.bcb.gov.br). O resultado é informativo,
+sem recomendação, e fica em cache local por 1 dia.
 
 ## Mercado US/global — MCP declarativo
 

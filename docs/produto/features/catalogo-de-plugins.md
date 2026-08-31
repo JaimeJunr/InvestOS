@@ -39,4 +39,4 @@ ou apresentado como "em breve" sem previsão real.
 
 Esse gap **não ficou sem solução** — só não foi resolvido por um plugin de terceiro. A feature
 [Dados de Mercado e Pesquisa](dados-de-mercado-e-pesquisa.md) cobre o mercado BR com uma
-implementação própria (brapi.dev + CVM Dados Abertos), validada por um spike técnico dedicado.
+implementação própria (brapi.dev + CVM Dados Abertos + BCB SGS), validada por um spike técnico dedicado.

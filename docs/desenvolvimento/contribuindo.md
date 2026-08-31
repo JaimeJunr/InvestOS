@@ -30,8 +30,8 @@ jq empty catalog.json            # valida JSON
 ## Convenções
 
 - **Nenhuma chamada de rede real em teste.** Toda integração externa passa por um override
-  injetável (`RISCO_HISTORY`, `ALOCACAO_QUOTE`, `HOLDINGS_FETCH`) ou por uma das duas fontes BR
-  implementadas diretamente (brapi.dev, CVM). Os fakes vivem em `tests/helpers/fake-*.sh`.
+  injetável (`RISCO_HISTORY`, `ALOCACAO_QUOTE`, `HOLDINGS_FETCH`) ou por uma das três fontes BR
+  implementadas diretamente (brapi.dev, CVM, BCB SGS). Os fakes vivem em `tests/helpers/fake-*.sh`.
 - **Mensagens de erro incluem o valor recebido e o esperado** — ex.: `"Slug invalido: recebido
   'X', esperado formato ^[a-z0-9]...`. Mantenha esse padrão em código novo.
 - **Nunca imprima credencial.** `bin/credencial.sh` só responde sim/não (exit code); nenhum outro

@@ -52,13 +52,15 @@ Esse mesmo ponto de extensão é o que os testes usam para injetar respostas fal
 
 ## Fontes de dados BR (implementação própria)
 
-Diferente do mercado US/global (só MCP declarativo), o mercado brasileiro tem duas fontes
+Diferente do mercado US/global (só MCP declarativo), o mercado brasileiro tem três fontes
 implementadas diretamente no repositório, escolhidas após um spike técnico validar viabilidade sem
 custo (a API oficial da B3 é B2B-only; a ANBIMA Feed API é paga — ambas descartadas):
 
 - **`bin/brapi-quote.sh`** — [brapi.dev](https://brapi.dev), ações/ETFs/FIIs.
 - **`bin/cvm-informe.sh`** — [CVM Dados Abertos](https://dados.cvm.gov.br), fundos (ticker = CNPJ
   de 14 dígitos).
+- **`bin/macro-brasil.sh`** — [BCB SGS](https://api.bcb.gov.br), dados macroeconômicos públicos de
+  Selic e CDI, somente informativos.
 
 ## Scripts de relatório: bash + Python
 
