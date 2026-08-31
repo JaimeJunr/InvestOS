@@ -70,6 +70,76 @@ PY
   grep -q '^acme AAPL us$' "$ALOCACAO_QUOTE_LOG"
 }
 
+@test "--valor e --data registram um ponto historico real, sem consultar cotacao" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 31433 --data 2023-01-01
+  [ "$status" -eq 0 ]
+  run jq -e '. == [{data: "2023-01-01", valorTotal: 31433}]' acme/nav-historico.json
+  [ "$status" -eq 0 ]
+  [ ! -s "$ALOCACAO_QUOTE_LOG" ]
+}
+
+@test "pontos historicos em datas diferentes acumulam, nao sobrescrevem" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 0 --data 2023-01-01
+  [ "$status" -eq 0 ]
+  run "$SCRIPT" acme --valor 31433 --data 2026-08-30
+  [ "$status" -eq 0 ]
+
+  run jq -e 'length == 2 and (map(.data) | sort) == ["2023-01-01", "2026-08-30"]' acme/nav-historico.json
+  [ "$status" -eq 0 ]
+}
+
+@test "--valor/--data no mesmo dia ja registrado sobrescreve (idempotente, mesma politica do snapshot automatico)" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 100 --data 2026-08-30
+  [ "$status" -eq 0 ]
+  run "$SCRIPT" acme --valor 200 --data 2026-08-30
+  [ "$status" -eq 0 ]
+
+  run jq -e '. == [{data: "2026-08-30", valorTotal: 200}]' acme/nav-historico.json
+  [ "$status" -eq 0 ]
+}
+
+@test "--valor sem --data (ou vice-versa) e rejeitado com mensagem clara" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 31433
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--data"* ]]
+
+  run "$SCRIPT" acme --data 2023-01-01
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--valor"* ]]
+}
+
+@test "--valor zero e permitido (patrimonio comecando do zero); negativo ou nao-numero e rejeitado" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 0 --data 2023-01-01
+  [ "$status" -eq 0 ]
+  rm acme/nav-historico.json
+
+  run "$SCRIPT" acme --valor -100 --data 2023-01-01
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"recebido"* ]]
+
+  run "$SCRIPT" acme --valor abacate --data 2023-01-01
+  [ "$status" -ne 0 ]
+}
+
+@test "--data em formato invalido e rejeitado" {
+  seed_portfolio acme
+
+  run "$SCRIPT" acme --valor 100 --data 30-08-2026
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"recebido"* ]]
+  [[ "$output" == *"AAAA-MM-DD"* ]]
+}
+
 @test "duas execucoes no mesmo dia atualizam o snapshot sem duplicar" {
   seed_portfolio acme
   write_prices 10 20 100

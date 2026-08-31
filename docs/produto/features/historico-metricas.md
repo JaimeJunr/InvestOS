@@ -12,7 +12,10 @@ algumas semanas/meses de uso real.
 
 - **`bin/nav-snapshot.sh <slug>`** — registra o valor total atual da carteira (reaproveita
   `bin/alocacao.sh`) em `<slug>/nav-historico.json`. Rodar mais de uma vez no mesmo dia sobrescreve
-  a entrada daquele dia com o valor mais recente — nunca duplica, nunca faz média.
+  a entrada daquele dia com o valor mais recente — nunca duplica, nunca faz média. Com
+  `--valor <n> --data <AAAA-MM-DD>`, registra um ponto histórico real (ex.: do extrato da
+  corretora) sem consultar cotação nenhuma — útil pra dar um baseline real em vez de esperar a
+  série acumular só a partir de hoje.
 - **`bin/transacao.sh <slug> registrar <tipo> <valor> [data]`** — log manual de
   aportes/resgates/compras/vendas em `<slug>/transacoes.json` (`tipo` ∈
   `aporte|resgate|compra|venda`). O InvestOS não executa ordem, então esse registro depende de
@@ -51,5 +54,8 @@ inventado.
 - **Não calcula Imposto de Renda devido de verdade.** A alíquota efetiva de `bin/eficiencia.sh`
   usa `impostoPago`/`ganhoRealizado` só se você os registrar manualmente em `transacoes.json` — sem
   isso, "dado insuficiente". Compensação de prejuízo (DARF) fica fora de escopo.
-- **Sem backfill retroativo.** `nav-historico.json` e `transacoes.json` nascem vazios; a série
-  começa a existir a partir de quando você começa a usar a feature.
+- **Sem estimativa por memória.** `nav-historico.json` e `transacoes.json` nascem vazios, e o
+  InvestOS nunca infere um ponto histórico a partir de "acho que valia mais ou menos X" — isso é
+  chute, não dado. Dado real que você já tem (extrato de corretora, por exemplo) **pode e deve**
+  ser registrado via `bin/nav-snapshot.sh --valor --data`, mesmo que seja de uma data bem antiga —
+  isso não é backfill especulativo, é o investidor informando um fato que já conhece.

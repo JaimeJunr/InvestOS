@@ -137,6 +137,25 @@ Grave em `watchlist-fundos.json`:
 
 Pule este passo (não crie o arquivo) se não houver fundo nenhum.
 
+## Passo 4 — Histórico real, se o investidor já tiver (opcional)
+
+Se em qualquer momento da entrevista o investidor mencionar ou colar dados reais de extrato da
+corretora (patrimônio em uma data, rentabilidade acumulada, valor inicial vs. atual) — **não
+descarte isso**. Não é "dado de memória" não-confiável: é extrato real, mais preciso que os
+snapshots automáticos que a série ainda não teve tempo de acumular. Ofereça registrar os pontos
+que o investidor tiver como histórico real:
+
+```bash
+bin/nav-snapshot.sh <slug> --valor <valor-inicial> --data <data-inicio>
+bin/nav-snapshot.sh <slug> --valor <valor-atual> --data <data-de-hoje>
+```
+
+Isso não é backfill por estimativa/chute — é o investidor informando um dado que ele já tem em
+mãos. Quanto mais pontos reais ele tiver (extratos mensais, por exemplo), melhor a base pra
+`bin/contra-benchmark.sh`/`bin/retorno.sh`/`bin/eficiencia.sh` mais adiante. Se ele só tiver
+"lembro mais ou menos que valia X há alguns meses" (sem extrato, por memória), aí sim não registre
+— avise que a série vai começar a acumular a partir de agora.
+
 ## Ao final
 
 Resuma o que foi gravado (diagnóstico, posições, alocação-alvo, watchlist se houver) e sugira o

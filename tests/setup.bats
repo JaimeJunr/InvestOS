@@ -415,6 +415,15 @@ assert_skill() {
   grep -q "ultimaRevisao" "acme/.claude/commands/instalar.md"
 }
 
+@test "instalar.md aceita historico real de extrato (nao descarta), so recusa chute de memoria" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  FILE="acme/.claude/commands/instalar.md"
+  grep -qi "extrato" "$FILE"
+  grep -q "nav-snapshot.sh" "$FILE"
+  grep -qi "descarte" "$FILE"
+}
+
 @test "status.md lembra revisao periodica e aponta bin/aporte.sh e bin/perdas.sh" {
   run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]
