@@ -50,9 +50,10 @@ com `jq empty catalog.json`.
 
 ## Processo de mudança de escopo
 
-O produto nasceu de um PRD formal, versionado em `.ralph/investos/` (workspace interno, não é
-documentação de usuário — ver [`produto/visao-e-motivacao.md`](../produto/visao-e-motivacao.md)
-para o resumo legível). Uma mudança de escopo depois de um PRD selado vira uma iteração `update`
+O produto nasceu de um PRD formal, mantido pelo autor num workspace de planejamento local
+(`.ralph/`, fora do controle de versão — gitignored de propósito, nunca publicado) — ver
+[`produto/visao-e-motivacao.md`](../produto/visao-e-motivacao.md) para o resumo legível de tudo
+que esse processo já produziu. Uma mudança de escopo depois de um PRD selado vira uma iteração `update`
 do PRD, nunca uma edição direta do documento aprovado — o mesmo processo que gerou
 [a decisão de mecanismo de MCP](../produto/decisao-mecanismo-mcp-e-enum-mercado.md) registrada
 neste repositório.

@@ -9,10 +9,8 @@
 Como nenhum plugin de terceiro cobre dados de mercado brasileiro (ver o
 [gap registrado no catálogo](catalogo-de-plugins.md#o-gap-de-dados-br)), esta feature resolve isso
 diretamente, sobre duas fontes públicas e gratuitas — validadas por um spike técnico antes de
-qualquer linha de código (ver
-[`.ralph/investos/spikes/dados-mercado-br.md`](../../../.ralph/investos/spikes/dados-mercado-br.md)
-para a investigação completa, incluindo por que a API oficial da B3 e a ANBIMA Feed API foram
-descartadas):
+qualquer linha de código (a API oficial da B3 é B2B-only, e a ANBIMA Feed API é paga; ambas foram
+descartadas em favor das duas fontes abaixo):
 
 - **Ações, ETFs e FIIs:** [`bin/brapi-quote.sh`](../../../bin/brapi-quote.sh), via
   [brapi.dev](https://brapi.dev) (free tier, 15.000 requisições/mês). `PETR4`, `VALE3`, `MGLU3` e

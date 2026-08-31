@@ -38,7 +38,7 @@ pronto para quando for.
   publicamente.
 - **Não expõe credenciais fora do `.env` local de cada portfólio.**
 
-## As 5 áreas do produto
+## As 6 áreas do produto
 
 | Área | Prioridade | O que faz |
 |------|------------|-----------|
@@ -47,6 +47,7 @@ pronto para quando for.
 | [Dados de Mercado e Pesquisa](features/dados-de-mercado-e-pesquisa.md) | P1 | Cotação, fundamentals e research — BR e US/global. |
 | [Gestão de Portfólio e Risco](features/gestao-de-portfolio-e-risco.md) | P1 | Alocação, métricas de risco (VaR/Sharpe/drawdown), rebalanceamento. |
 | [Integração com Corretora/Banco](features/integracao-corretora-banco.md) | P2 | Leitura read-only de posições reais via Plaid/Interactive Brokers. |
+| [Histórico e Métricas Avançadas](features/historico-metricas.md) | P1 | NAV/transações ao longo do tempo, benchmark, Beta/Alfa/TWR/MWR/Sortino/giro/alíquota efetiva. |
 
 ## Como isso foi construído
 

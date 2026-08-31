@@ -21,7 +21,10 @@ invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 ├── portfolio.json        # {"mercado": "br" | "us" | "ambos"}
 ├── holdings.json          # posições — manual ou sincronizado via corretora
 ├── alocacao-alvo.json     # alocação-alvo + threshold de rebalanceamento
-└── watchlist-fundos.json # opcional — fundos de interesse para o parser da CVM
+├── watchlist-fundos.json # opcional — fundos de interesse para o parser da CVM
+├── perfil-investidor.json # diagnóstico do /instalar (perfil de risco, objetivos, ultimaRevisao)
+├── nav-historico.json     # opcional — série de valor total, um snapshot por dia
+└── transacoes.json       # opcional — log manual de aportes/resgates/compras/vendas
 ```
 
 ## O padrão declarativo
@@ -47,8 +50,8 @@ Esse mesmo ponto de extensão é o que os testes usam para injetar respostas fal
 ## Fontes de dados BR (implementação própria)
 
 Diferente do mercado US/global (só MCP declarativo), o mercado brasileiro tem duas fontes
-implementadas diretamente no repositório, escolhidas após um
-[spike técnico](../../.ralph/investos/spikes/dados-mercado-br.md) validar viabilidade sem custo:
+implementadas diretamente no repositório, escolhidas após um spike técnico validar viabilidade sem
+custo (a API oficial da B3 é B2B-only; a ANBIMA Feed API é paga — ambas descartadas):
 
 - **`bin/brapi-quote.sh`** — [brapi.dev](https://brapi.dev), ações/ETFs/FIIs.
 - **`bin/cvm-informe.sh`** — [CVM Dados Abertos](https://dados.cvm.gov.br), fundos (ticker = CNPJ
@@ -56,10 +59,13 @@ implementadas diretamente no repositório, escolhidas após um
 
 ## Scripts de relatório: bash + Python
 
-`alocacao.sh` e `risco.sh` seguem o mesmo formato: um script bash resolve e valida os arquivos de
-entrada, busca cotações/histórico pelo mecanismo acima, e entrega o payload em JSON para um script
-Python (`*-report.py`) que faz o cálculo de verdade (desvio de alocação, VaR/Sharpe/drawdown,
-sugestão de rebalanceamento) e imprime o relatório.
+`alocacao.sh`, `risco.sh`, `diagnostico.sh`, `contra-benchmark.sh`, `retorno.sh` e `eficiencia.sh`
+seguem o mesmo formato: um script bash resolve e valida os arquivos de entrada, busca
+cotações/histórico pelo mecanismo acima, e entrega o payload em JSON para um script Python
+(`*-report.py`) que faz o cálculo de verdade e imprime o relatório. `nav-snapshot.sh` e
+`transacao.sh` são a exceção — não geram relatório, só acumulam dado (`nav-historico.json` /
+`transacoes.json`) que os relatórios de histórico (`contra-benchmark.sh`, `retorno.sh`,
+`eficiencia.sh`) consomem depois.
 
 ## Testes
 

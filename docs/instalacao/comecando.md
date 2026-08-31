@@ -99,3 +99,16 @@ bin/rebalanceamento.sh minha-carteira
 [`produto/features/gestao-de-portfolio-e-risco.md`](../produto/features/gestao-de-portfolio-e-risco.md)
 caso prefira editar à mão. A integração de corretora, quando conectada, substitui a necessidade de
 manter `holdings.json` manualmente.
+
+## Acumulando histórico (opcional)
+
+Métricas como Beta, TWR e Sortino precisam de uma série de dados que só existe se você alimentar
+com o tempo — não há atalho nem backfill retroativo:
+
+```bash
+bin/nav-snapshot.sh minha-carteira              # roda periodicamente (ex.: sempre que checar /status)
+bin/transacao.sh minha-carteira registrar aporte 1000
+```
+
+Detalhes de cada métrica e o que fazer enquanto o histórico ainda é curto em
+[`produto/features/historico-metricas.md`](../produto/features/historico-metricas.md).

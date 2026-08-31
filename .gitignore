@@ -1,12 +1,11 @@
 .guarded-impl/
+.tdr/
+.tdr-evidence/
 __pycache__/
 *.pyc
 
-# Ralph loop internals — noisy run state, not part of the published planning docs
-# (docs/produto/ already carries the readable version of prd.html/features/*.html/spikes/*)
-.ralph/*/.env
-.ralph/*/logs/
-.ralph/*/.last-branch
-.ralph/*/stop.md
-.ralph/tdr/
+# Workspace interno do processo de geração (PRD, loop de implementação, evidência de
+# review) — nunca vai pro repo publico. O conteudo legivel vive em docs/ (ver
+# docs/desenvolvimento/contribuindo.md sobre o processo /prd -> /ralph).
+.ralph/
 

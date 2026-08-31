@@ -70,7 +70,7 @@ Two portfolios never share `_memoria/`, `.env`, or `.claude/settings.json` — e
 
 ### Declarative MCP, no first-party HTTP client (core convention)
 
-External integrations (Alpha Vantage for US/global data, Plaid for brokerage) are wired as **declarative `.mcp.json` config** written by `setup.sh`, with credentials left as empty placeholders in `.env` — InvestOS's own code never makes a live call to those APIs. This was a deliberate architectural decision (see `.ralph/investos/prd-update-1.html`) made after the first implementation pass got blocked on the ambiguity.
+External integrations (Alpha Vantage for US/global data, Plaid for brokerage) are wired as **declarative `.mcp.json` config** written by `setup.sh`, with credentials left as empty placeholders in `.env` — InvestOS's own code never makes a live call to those APIs. This was a deliberate architectural decision (see [`docs/produto/decisao-mecanismo-mcp-e-enum-mercado.md`](docs/produto/decisao-mecanismo-mcp-e-enum-mercado.md)) made after the first implementation pass got blocked on the ambiguity.
 
 The practical consequence: every script that needs external market data or brokerage data accepts an **injectable fetch override** via an environment variable instead of calling anything directly:
 
