@@ -12,10 +12,11 @@ diretamente, sobre duas fontes públicas e gratuitas — validadas por um spike 
 qualquer linha de código (a API oficial da B3 é B2B-only, e a ANBIMA Feed API é paga; ambas foram
 descartadas em favor das duas fontes abaixo):
 
-- **Ações, ETFs e FIIs:** [`bin/brapi-quote.sh`](../../../bin/brapi-quote.sh), via
-  [brapi.dev](https://brapi.dev) (free tier, 15.000 requisições/mês). `PETR4`, `VALE3`, `MGLU3` e
-  `ITUB4` funcionam sem token; qualquer outro ticker exige `BRAPI_TOKEN` no `.env` do portfólio
-  (cadastro gratuito).
+- **Ações, ETFs e FIIs:** [`bin/brapi-quote.sh`](../../../bin/brapi-quote.sh), via a
+  [API v2 da brapi.dev](https://brapi.dev) (free tier, 15.000 requisições/mês; endpoints
+  separados de cotação/histórico/estatísticas, token via header `Authorization: Bearer`, nunca na
+  URL). `PETR4`, `VALE3`, `MGLU3` e `ITUB4` funcionam sem token; qualquer outro ticker exige
+  `BRAPI_TOKEN` no `.env` do portfólio (cadastro gratuito).
 - **Fundos:** [`bin/cvm-informe.sh`](../../../bin/cvm-informe.sh), via o Informe Diário de Fundos
   da [CVM Dados Abertos](https://dados.cvm.gov.br) (CSV/ZIP público, atualização diária, sem
   login). O ticker de um fundo é o CNPJ de 14 dígitos.

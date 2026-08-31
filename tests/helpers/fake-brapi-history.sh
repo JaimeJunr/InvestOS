@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
-# Fake nomeado do GET historico da brapi.dev (range/interval). Nao faz I/O de rede.
+# Fake nomeado do GET historico da brapi.dev v2 (range/interval). Nao faz I/O de rede.
 set -euo pipefail
 
 url="${1:-}"
+token="${2:-}"
 if [ -z "$url" ]; then
-  echo "fake-brapi-history: recebido URL vazia, esperado https://brapi.dev/api/quote/<ticker>?range=3mo&interval=1d" >&2
+  echo "fake-brapi-history: recebido URL vazia, esperado .../v2/stocks/historical?symbols=<ticker>&range=3mo&interval=1d" >&2
   exit 1
 fi
 
 if [ -n "${BRAPI_FETCH_LOG:-}" ]; then
   printf '%s\n' "$url" >> "$BRAPI_FETCH_LOG"
+  if [ -n "$token" ]; then
+    printf 'Authorization: Bearer %s\n' "$token" >> "$BRAPI_FETCH_LOG"
+  fi
 fi
 
-ticker=$(printf '%s' "$url" | sed -E 's|.*/quote/([^?]+).*|\1|')
+ticker=$(printf '%s' "$url" | sed -E 's/.*[?&]symbols=([^&]+).*/\1/')
 if [ -z "$ticker" ] || [ "$ticker" = "$url" ]; then
-  echo "fake-brapi-history: nao extraiu ticker de URL '$url', esperado .../quote/<ticker>?range=..." >&2
+  echo "fake-brapi-history: nao extraiu ticker de URL '$url', esperado .../v2/stocks/historical?symbols=<ticker>&range=..." >&2
   exit 1
 fi
 
@@ -38,6 +42,6 @@ bars = [
     }
     for day, close in days
 ]
-json.dump({"results": [{"symbol": ticker, "historicalDataPrice": bars}]}, sys.stdout)
+json.dump({"results": [{"symbol": ticker, "data": {"historicalDataPrice": bars}}]}, sys.stdout)
 print()
 PY

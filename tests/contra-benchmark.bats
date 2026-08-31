@@ -66,7 +66,7 @@ bars = [
     for day, close in days
 ]
 with open(sys.argv[1], "w", encoding="utf-8") as fh:
-    json.dump({"results": [{"symbol": "^GSPC", "historicalDataPrice": bars}]}, fh)
+    json.dump({"results": [{"symbol": "^GSPC", "data": {"historicalDataPrice": bars}}]}, fh)
 PY
 }
 
@@ -109,7 +109,7 @@ for key in ("beta", "alfa", "rQuadrado", "trackingError"):
   [ "$status" -eq 0 ]
   run assert_known_metrics "$output" br '^BVSP'
   [ "$status" -eq 0 ]
-  grep -q "quote/^BVSP" "$BRAPI_FETCH_LOG"
+  grep -q "symbols=^BVSP" "$BRAPI_FETCH_LOG"
   grep -q "range=3mo" "$BRAPI_FETCH_LOG"
 }
 

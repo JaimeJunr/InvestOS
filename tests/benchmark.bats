@@ -60,13 +60,14 @@ seed_portfolio() {
   run "$SCRIPT" acme br
   [ "$status" -eq 0 ]
   first_output="$output"
-  [ "$(wc -l < "$BRAPI_FETCH_LOG")" -eq 1 ]
-  [ "$(cat "$BRAPI_FETCH_LOG")" = "https://brapi.dev/api/quote/^BVSP?range=3mo&interval=1d&token=segredo-teste" ]
+  [ "$(wc -l < "$BRAPI_FETCH_LOG")" -eq 2 ]
+  [ "$(sed -n '1p' "$BRAPI_FETCH_LOG")" = "https://brapi.dev/api/v2/stocks/historical?symbols=^BVSP&range=3mo&interval=1d" ]
+  [ "$(sed -n '2p' "$BRAPI_FETCH_LOG")" = "Authorization: Bearer segredo-teste" ]
   run python3 -c '
 import json, sys
 payload = json.loads(sys.argv[1])
 assert payload["results"][0]["symbol"] == "^BVSP", payload
-assert payload["results"][0]["historicalDataPrice"], payload
+assert payload["results"][0]["data"]["historicalDataPrice"], payload
 ' "$first_output"
   [ "$status" -eq 0 ]
 
@@ -83,7 +84,7 @@ import json, sys
 assert json.loads(sys.argv[1]) == json.loads(sys.argv[2])
 ' "$first_output" "$second_output"
   [ "$status" -eq 0 ]
-  [ "$(wc -l < "$BRAPI_FETCH_LOG")" -eq 1 ]
+  [ "$(wc -l < "$BRAPI_FETCH_LOG")" -eq 2 ]
 }
 
 @test "mercado br preserva rejeicao do cliente quando falta BRAPI_TOKEN" {

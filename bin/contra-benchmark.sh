@@ -57,7 +57,7 @@ markets_for() {
 
 normalize_series() {
   jq -c \
-    '(.results[0].historicalDataPrice // []) | map({date: ((.date | todateiso8601)[0:10]), close: (.adjustedClose // .close)}) | sort_by(.date)' \
+    '(.results[0].data.historicalDataPrice // []) | map({date: ((.date | todateiso8601)[0:10]), close: (.adjustedClose // .close)}) | sort_by(.date)' \
     <<<"$1"
 }
 

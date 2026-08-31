@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Consulta cotacao BR via brapi.dev, com cache local por portfolio.
+# Consulta cotacao/historico/estatisticas BR via brapi.dev v2, com cache local por portfolio.
 #
 # Uso:
 #   bin/brapi-quote.sh <slug> <ticker>
@@ -7,17 +7,23 @@
 set -euo pipefail
 
 FREE_TICKERS="PETR4 VALE3 MGLU3 ITUB4"
-BRAPI_BASE_URL="${BRAPI_BASE_URL:-https://brapi.dev/api/quote}"
+BRAPI_BASE_URL="${BRAPI_BASE_URL:-https://brapi.dev/api/v2/stocks}"
 CACHE_TTL="${BRAPI_CACHE_TTL_SECONDS:-3600}"
 
 usage() {
   cat <<EOF
 Uso: bin/brapi-quote.sh <slug> <ticker>
 
-Consulta cotacao de acoes/ETFs/FIIs BR via brapi.dev (free tier, 15.000 req/mes).
+Consulta cotacao de acoes/ETFs/FIIs BR via brapi.dev v2 (free tier, 15.000 req/mes).
 Tickers gratuitos sem token: PETR4, VALE3, MGLU3, ITUB4.
-Demais tickers exigem BRAPI_TOKEN no <slug>/.env (cadastro gratuito em brapi.dev).
+Demais tickers exigem BRAPI_TOKEN no <slug>/.env (cadastro gratuito em brapi.dev),
+enviado como header Authorization: Bearer (nunca na URL).
 Cache local em <slug>/_cache/brapi/ evita estourar a quota (TTL ${CACHE_TTL}s).
+
+Modos (via env, mesma interface do endpoint de cotacao):
+  BRAPI_RANGE=<janela> BRAPI_INTERVAL=<intervalo>  -> GET /v2/stocks/historical
+  BRAPI_STATISTICS=1                                -> GET /v2/stocks/statistics
+  (nenhum dos dois)                                 -> GET /v2/stocks/quote
 
 Fallback opcional via yfinance com sufixo .SA (ex.: PETR4.SA), sem quota garantida.
 EOF
@@ -45,9 +51,11 @@ is_free_ticker() {
 }
 
 http_get() {
-  local url="$1"
+  local url="$1" token="$2"
   if [ -n "${BRAPI_HTTP_GET:-}" ]; then
-    "$BRAPI_HTTP_GET" "$url"
+    "$BRAPI_HTTP_GET" "$url" "$token"
+  elif [ -n "$token" ]; then
+    curl -fsS -H "Authorization: Bearer $token" "$url"
   else
     curl -fsS "$url"
   fi
@@ -70,21 +78,25 @@ write_cache() {
 }
 
 build_quote_url() {
-  local ticker="$1" token="$2" url sep
-  url="$BRAPI_BASE_URL/$ticker"
-  sep="?"
+  local ticker="$1"
+  if [ -n "${BRAPI_STATISTICS:-}" ]; then
+    printf '%s/statistics?symbols=%s' "$BRAPI_BASE_URL" "$ticker"
+    return
+  fi
   if [ -n "${BRAPI_RANGE:-}" ]; then
-    url="${url}?range=${BRAPI_RANGE}&interval=${BRAPI_INTERVAL:-1d}"
-    sep="&"
+    printf '%s/historical?symbols=%s&range=%s&interval=%s' \
+      "$BRAPI_BASE_URL" "$ticker" "$BRAPI_RANGE" "${BRAPI_INTERVAL:-1d}"
+    return
   fi
-  if [ -n "$token" ]; then
-    url="${url}${sep}token=$token"
-  fi
-  printf '%s' "$url"
+  printf '%s/quote?symbols=%s' "$BRAPI_BASE_URL" "$ticker"
 }
 
 cache_path() {
   local slug="$1" ticker="$2"
+  if [ -n "${BRAPI_STATISTICS:-}" ]; then
+    printf '%s/_cache/brapi/%s-statistics.json' "$slug" "$ticker"
+    return
+  fi
   if [ -n "${BRAPI_RANGE:-}" ]; then
     printf '%s/_cache/brapi/%s-%s-%s.json' "$slug" "$ticker" "$BRAPI_RANGE" "${BRAPI_INTERVAL:-1d}"
     return
@@ -119,6 +131,6 @@ if [ -z "$TOKEN" ] && ! is_free_ticker "$TICKER"; then
   exit 1
 fi
 
-payload=$(http_get "$(build_quote_url "$TICKER" "$TOKEN")")
+payload=$(http_get "$(build_quote_url "$TICKER")" "$TOKEN")
 write_cache "$CACHE" "$payload"
 printf '%s\n' "$payload"

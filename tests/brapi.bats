@@ -69,7 +69,8 @@ seed_portfolio() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"WEGE3"* ]]
   [[ "$output" != *"segredo-teste"* ]]
-  grep -q 'token=segredo-teste' "$BRAPI_FETCH_LOG"
+  grep -q 'Authorization: Bearer segredo-teste' "$BRAPI_FETCH_LOG"
+  ! grep -q 'token=segredo-teste' "$BRAPI_FETCH_LOG"
   [ -f "acme/_cache/brapi/WEGE3.json" ]
 }
 

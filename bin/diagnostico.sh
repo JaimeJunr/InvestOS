@@ -39,7 +39,7 @@ quote_payload() {
   fi
   if [ "$mercado" = "br" ]; then
     raw=$("$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker")
-    jq -ce '{preco: .results[0].regularMarketPrice, dividendYield: .results[0].dividendYield}' <<<"$raw"
+    jq -ce '{preco: .results[0].data.regularMarketPrice}' <<<"$raw"
     return
   fi
   echo "Cotacao indisponivel: recebido mercado '$mercado' ticker '$ticker', esperado mercado 'br' (brapi.dev) ou ALOCACAO_QUOTE injetado (MCP US e config declarativa, sem client HTTP)." >&2
@@ -48,10 +48,10 @@ quote_payload() {
 
 brapi_dividend_yield() {
   local slug="$1" ticker="$2" raw
-  if ! raw=$("$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker" 2>/dev/null); then
+  if ! raw=$(BRAPI_STATISTICS=1 "$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker" 2>/dev/null); then
     return 0
   fi
-  jq -r '.results[0].dividendYield // empty' <<<"$raw"
+  jq -r '.results[0].data.dividendYield // empty' <<<"$raw"
 }
 
 merge_quote() {
@@ -67,7 +67,7 @@ merge_quote() {
 resolve_dividend_yield() {
   local slug="$1" ticker="$2" mercado="$3" payload="$4" dy
   dy=$(jq -r '.dividendYield // empty' <<<"$payload")
-  if [ -z "$dy" ] && [ "$mercado" = "br" ] && [ -n "${ALOCACAO_QUOTE:-}" ]; then
+  if [ -z "$dy" ] && [ "$mercado" = "br" ]; then
     dy=$(brapi_dividend_yield "$slug" "$ticker")
   fi
   printf '%s' "$dy"

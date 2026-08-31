@@ -39,7 +39,7 @@ quote_payload() {
   fi
   if [ "$mercado" = "br" ]; then
     raw=$("$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker")
-    jq -ce '{preco: .results[0].regularMarketPrice}' <<<"$raw"
+    jq -ce '{preco: .results[0].data.regularMarketPrice}' <<<"$raw"
     return
   fi
   echo "Cotacao indisponivel: recebido mercado '$mercado' ticker '$ticker', esperado mercado 'br' (brapi.dev) ou ALOCACAO_QUOTE injetado (MCP US e config declarativa, sem client HTTP)." >&2
