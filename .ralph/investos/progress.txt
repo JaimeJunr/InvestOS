@@ -26,6 +26,7 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Benchmark US (fh-US-004): `bin/benchmark-quote.sh <slug> us` usa o override de processo `BENCHMARK_QUOTE` (mesmo argv `slug ticker mercado` de `RISCO_HISTORY`/`ALOCACAO_QUOTE`) com ticker fixo `^GSPC`. Sem a variavel: stderr + exit 1 no gap oficial; yfinance e so documentacao (usage/erro), nao client. Nao le `.mcp.json` nem `.env`. Fake nomeado: `tests/helpers/fake-benchmark-quote.sh`.
 - Diagnostico sem historico (fh-US-005): `bin/diagnostico.sh` + `bin/diagnostico-report.py`. So snapshot de `holdings.json`. Concentracao = maior ticker por valor; exposicao cambial = `porMercado` br/us; liquidez = campo opcional `liquidez` (`D+0`/`D+1`, precedente `precoMedio`); DY 12m = `results[0].dividendYield` da brapi ou a string `indisponivel` (nunca inventa). Preco reusa `ALOCACAO_QUOTE`. Output JSON numerico, sem limite prescritivo. Fake DY: `BRAPI_DIVIDEND_YIELDS` no `fake-brapi-http.sh`.
 - Relacao vs benchmark (fh-US-006): `bin/contra-benchmark.sh` + `bin/contra-benchmark-report.py`. Mercado de `portfolio.json` escolhe `^BVSP` (via `benchmark-quote.sh`) ou `^GSPC` (`BENCHMARK_QUOTE`); `ambos` emite `porMercado`. Retornos de `nav-historico.json` alinhados por intersecao de datas com o bench (mesmo periodo, sem interpolar). `MIN_ALIGNED=4` (3 retornos) porque 2 pontos de OLS deixam R²=1. Sem anualizar 252: snapshot de NAV nao e diario. Insuficiente (arquivo ausente, `[]`, ou poucos pontos) emite a string `historico insuficiente` nos 4 campos, exit 0.
+- TWR/MWR (fh-US-007): `bin/retorno.sh` + `bin/retorno-report.py`. TWR encadeia `r_i = (NAV_i - CF_i)/NAV_{i-1} - 1` entre snapshots, CF = aporte - resgate em `(prev, curr]`; compra/venda internas ignoradas. MWR e IRR de holding period (nao anualizado, mesmo constraint do contra-benchmark) sobre fluxos de `transacoes.json` (aporte negativo, resgate positivo) + NAV final — sem NAV inicial extra (duplicaria o aporte de abertura). Sem `transacoes.json`/`[]` ou `len(NAV) < 2` emite a string `dado insuficiente` nos dois campos, exit 0.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -286,4 +287,17 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Achados LOW do qa-reviewer (nao-bloqueantes, backlog): (1) sem teste de `mercado=ambos`; (2) fronteira de 3 NAVs alinhados (R² tautologico) sem teste dedicado; (3) `nav-historico.json` presente mas 0 bytes cai em JSONDecodeError em vez da string. Nenhum e X→Z.
 - GATE 1: tests passing (132/132) | GATE 2: lint clean (`bash -n`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (Bash/Bats/Python sem tooling ou threshold) | GATE 5: committed at 1381c25 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
+
+## 2026-08-30 21:35:00 -0300 - fh-US-007
+- What was implemented: `bin/retorno.sh` + `bin/retorno-report.py` calculam TWR (cadeia geometrica dos sub-periodos entre snapshots de `nav-historico.json`, isolando aporte/resgate) e MWR (IRR de holding period dos fluxos de `transacoes.json` + valor final). Sem transacoes ou NAV < 2 snapshots emite a string `dado insuficiente`.
+- Files changed: `bin/retorno.sh`, `bin/retorno-report.py`, `tests/retorno.bats`, `CLAUDE.md`, `.ralph/investos/attempts.log`, `.ralph/investos/prd.json`, `.ralph/investos/progress.txt`.
+- Resolution: lidos `CLAUDE.md`, `ivt-quality:backend-testing`, precedente `bin/contra-benchmark.sh` (bash+python, string de insuficiente, sem anualizar). `.claude/skills/` nao existe neste repo. Compra/venda internas fora do CF. MWR nao injeta NAV inicial (AC lista transacoes + valor final).
+- Learnings for future iterations:
+  - TWR isola CF no intervalo `(prev, curr]`; aporte no mesmo dia do primeiro snapshot ja esta no NAV e nao entra de novo.
+  - Mutar so `MIN_NAV` nao mata os testes de `dado insuficiente` — `holding_period_irr` ainda devolve None. TDR genuino do AC3 exige mutar `insufficient_payload` para numero.
+  - GATE 6: tdr-runner/qa-reviewer nao resolvem como `subagent_type` neste harness Grok; despacho via general-purpose carregando o contrato (mesmo precedente de fh-US-006).
+- Achados LOW do qa-reviewer (nao-bloqueantes, backlog): (1) frase-mae do CLAUDE.md ainda cita `holdings.json` como input generico dos reports; (2) se Newton/IRR falha por motivo distinto de AC3, TWR tambem vira a string (relatorio atomico, alinhado aos testes). Nenhum e X→Z.
+- GATE 1: tests passing (139/139) | GATE 2: lint clean (`bash -n`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (Bash/Bats/Python sem tooling ou threshold) | GATE 5: committed at f12fa9f | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+---
+
 
