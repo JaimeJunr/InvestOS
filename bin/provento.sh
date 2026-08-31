@@ -179,7 +179,7 @@ PY
   fi
 
   jq -n --argjson existente "$EXISTENTE" --argjson novos "$NORMALIZADO" \
-    '$existente + [$novos[] | select(($existente | index(.)) == null)]' \
+    '$existente + ($novos - $existente)' \
     > "$TEMPORARIO"
 
   mv "$TEMPORARIO" "$PROVENTOS"

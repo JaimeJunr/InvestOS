@@ -69,3 +69,50 @@ persistidos (diferente de proventos reinvestidos, que só "aparecem" indiretamen
   ticker/classe/tipo, e dividend yield realizado 12 meses (proventos líquidos do período / NAV
   médio do período, via `nav-historico.json` — "dado insuficiente" sem histórico suficiente).
   **Informativo apenas — não calcula Imposto de Renda devido.**
+
+## Extratos B3 (Negociação, Eventos, Ofertas Públicas)
+
+Registra os quatro extratos oficiais da Área do Investidor da B3. **Ler o extrato (XLSX, PDF, CSV,
+o que for) é trabalho do agente, não do InvestOS** — não existe parser de layout B3 no código; a
+skill [`extratos-b3`](../../../templates/skills/extratos-b3/SKILL.md) instrui o agente a classificar
+cada linha e montar o array canônico antes de chamar `importar`. Movimentação (ledger genérico) é
+roteada: dividendo/JCP/rendimento → `provento.sh`; transferência (~aporte/resgate) → `transacao.sh`
+(um `registrar` por linha, não tem `importar`); compra/venda → `negociacao.sh`; evento corporativo →
+`evento-corporativo.sh`. Tipo ambíguo: o agente pergunta, nunca classifica em silêncio.
+
+### Negociação e Ofertas Públicas (`bin/negociacao.sh`, `bin/negociacoes-relatorio.sh`)
+
+Grava compras/vendas em `<slug>/negociacoes.json`. Ofertas Públicas (IPO/follow-on/subscrição) **não
+têm arquivo separado** — o campo opcional `oferta` marca a participação:
+
+```json
+{"ticker": "PETR4", "tipo": "compra", "quantidade": 100, "precoUnitario": 32.50, "data": "2026-03-10", "oferta": null}
+```
+
+- **`bin/negociacao.sh <slug> registrar <ticker> <tipo> <quantidade> <precoUnitario> <data> [oferta]`**
+  — um evento por vez. `tipo` ∈ `compra | venda`. `quantidade` e `precoUnitario` > 0. `data` no
+  formato `AAAA-MM-DD`.
+- **`bin/negociacao.sh <slug> importar <arquivo.json>`** — em lote, all-or-nothing (um item inválido
+  rejeita o arquivo inteiro) e idempotente (reimportar o mesmo extrato não duplica).
+- **`bin/negociacoes-relatorio.sh <slug>`** — total comprado, total vendido, quantidade líquida por
+  ticker, volume por ticker e por tipo, e seção de ofertas públicas (itens com `oferta` preenchido,
+  agrupados por oferta). **Não calcula ganho/perda de capital em vendas** — não é objetivo do
+  InvestOS calcular IR.
+
+### Eventos corporativos (`bin/evento-corporativo.sh`, `bin/eventos-corporativos-relatorio.sh`)
+
+Log **puramente informativo** em `<slug>/eventos-corporativos.json` — **não ajusta `holdings.json`**
+(a matemática de ajuste por tipo de evento está fora do v1):
+
+```json
+{"ticker": "PETR4", "tipo": "desdobramento", "data": "2026-05-01", "fator": 2, "quantidadeRecebida": null, "observacao": null}
+```
+
+- **`bin/evento-corporativo.sh <slug> registrar <ticker> <tipo> <data> [fator] [quantidadeRecebida] [observacao]`**
+  — `tipo` ∈ `desdobramento | grupamento | bonificacao | incorporacao | outro`. Pelo menos ticker,
+  tipo e data são obrigatórios; `fator` (> 0, ex. desdobro 1:2 → 2, grupamento 10:1 → 0.1),
+  `quantidadeRecebida` (> 0) e `observacao` (string livre) são todos opcionais.
+- **`bin/evento-corporativo.sh <slug> importar <arquivo.json>`** — em lote, all-or-nothing e
+  idempotente.
+- **`bin/eventos-corporativos-relatorio.sh <slug>`** — listagem ordenada por data, agrupada por
+  ticker e por tipo. Sem cálculo de retorno/valor.

@@ -155,6 +155,7 @@ if jq -e '.["risco"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
   mkdir -p "$TARGET_DIR/.claude/skills"
   cp -r "$SKILLS_TEMPLATE/rebalanceamento" "$TARGET_DIR/.claude/skills/"
   cp -r "$SKILLS_TEMPLATE/proventos" "$TARGET_DIR/.claude/skills/"
+  cp -r "$SKILLS_TEMPLATE/extratos-b3" "$TARGET_DIR/.claude/skills/"
 fi
 
 cat > "$TARGET_DIR/.gitignore" <<'EOF'

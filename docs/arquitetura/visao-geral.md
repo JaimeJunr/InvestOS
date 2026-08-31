@@ -25,7 +25,9 @@ invocado como `bin/<comando>.sh <caminho-do-portfolio>`.
 ├── perfil-investidor.json # diagnóstico do /instalar (perfil de risco, objetivos, ultimaRevisao)
 ├── nav-historico.json     # opcional — série de valor total, um snapshot por dia
 ├── transacoes.json       # opcional — log manual de aportes/resgates/compras/vendas
-└── proventos.json         # opcional — log de dividendos/JCP/rendimentos recebidos
+├── proventos.json         # opcional — log de dividendos/JCP/rendimentos recebidos
+├── negociacoes.json       # opcional — log de compras/vendas (extrato B3 Negociação)
+└── eventos-corporativos.json # opcional — log informativo de eventos corporativos B3
 ```
 
 ## O padrão declarativo

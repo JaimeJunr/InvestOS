@@ -126,6 +126,35 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "importar acumula sobre proventos.json ja nao-vazio: segundo lote com eventos genuinamente novos nao e descartado" {
+  seed_portfolio acme
+  python3 - <<'PY'
+import json
+payload = [{"ticker": "PETR4", "tipo": "dividendo", "classe": "acoes", "valorBruto": 6.13, "valorLiquido": 6.13, "data": "2026-12-21"}]
+with open("lote1.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  run "$SCRIPT" acme importar lote1.json
+  [ "$status" -eq 0 ]
+
+  python3 - <<'PY'
+import json
+payload = [
+    {"ticker": "VALE3", "tipo": "dividendo", "classe": "acoes", "valorBruto": 3.0, "valorLiquido": 3.0, "data": "2026-10-01"},
+    {"ticker": "HGLG11", "tipo": "rendimento", "classe": "fiis", "valorBruto": 1.5, "valorLiquido": 1.5, "data": "2026-09-01"},
+]
+with open("lote2.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  run "$SCRIPT" acme importar lote2.json
+  [ "$status" -eq 0 ]
+
+  run jq -e 'length == 3' acme/proventos.json
+  [ "$status" -eq 0 ]
+  run jq -e '[.[] | .ticker] | sort == ["HGLG11", "PETR4", "VALE3"]' acme/proventos.json
+  [ "$status" -eq 0 ]
+}
+
 @test "importar rejeita item invalido no array, nao grava nada (all-or-nothing)" {
   seed_portfolio acme
   python3 - <<'PY'

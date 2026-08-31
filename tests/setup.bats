@@ -266,6 +266,18 @@ assert_skill() {
   [ ! -e "acme/.claude/skills/proventos" ]
 }
 
+@test "dominio risco instala skill extratos-b3" {
+  run bash -c "printf 'n\ny\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  [ -f "acme/.claude/skills/extratos-b3/SKILL.md" ]
+}
+
+@test "sem dominio risco nao instala skill extratos-b3" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  [ ! -e "acme/.claude/skills/extratos-b3" ]
+}
+
 @test "sem dominio research nao instala skill mesmo com dados-mercado" {
   run bash -c "printf 'n\nn\ny\nn\nbr\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]
