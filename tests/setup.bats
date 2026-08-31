@@ -352,6 +352,17 @@ assert_skill() {
   grep -qi "prazo" "acme/.claude/commands/instalar.md"
 }
 
+@test "instalar.md deriva perfil de risco de fatores concretos (suitability), nao pergunta o rotulo direto" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  FILE="acme/.claude/commands/instalar.md"
+  grep -qi "toler.ncia" "$FILE"
+  grep -qi "conhecimento" "$FILE"
+  grep -qi "deriv" "$FILE"
+  grep -qi "confirm" "$FILE"
+  ! grep -qi "qual perfil de risco voce\|com qual perfil.*se identifica" "$FILE"
+}
+
 @test "status.md e read-only: nao instrui escrever holdings.json nem alocacao-alvo.json" {
   run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]

@@ -23,10 +23,29 @@ Antes de perguntar sobre posições, faça o mesmo diagnóstico que um profissio
 antes de montar uma carteira. Não pule este passo mesmo que o usuário queira ir direto pras
 posições — pergunte pelo menos uma vez, e registre a resposta.
 
-1. **Perfil de risco (suitability):** o investidor se identifica mais com **conservador**
-   (prioriza segurança e liquidez, aceita retorno menor), **moderado** (busca equilíbrio entre
-   segurança e crescimento, tolera oscilação leve) ou **arrojado/agressivo** (foca em ganho de
-   capital a longo prazo, aceita alta volatilidade)?
+1. **Perfil de risco (suitability) — derivado, nunca perguntado direto.** Não pergunte "qual
+   perfil você se identifica" — isso é autoavaliação enviesada (quase todo mundo se acha "moderado"
+   ou superestima a própria tolerância). Em vez disso, pergunte os 4 fatores que uma análise de
+   suitability de verdade usa, e **derive** o perfil da combinação das respostas:
+   - **Tolerância a perda:** se o valor investido caísse, digamos, 20% em pouco tempo, o
+     investidor venderia tudo (baixa tolerância), ficaria preocupado mas manteria a posição
+     (tolerância média) ou veria como oportunidade de aportar mais (alta tolerância)?
+   - **Horizonte de tempo predominante:** reaproveite o Passo 0.2 (objetivos e prazos) — se a
+     maioria dos objetivos é curto prazo, horizonte é curto; se é longo prazo (aposentadoria etc.),
+     horizonte é longo.
+   - **Conhecimento de mercado financeiro:** o investidor já usa só produtos básicos (poupança,
+     CDB, Tesouro Direto), já entende fundos de investimento e renda variável leve (FIIs), ou já
+     domina ações, derivativos, mercado internacional?
+   - **Situação financeira atual:** reaproveite o Passo 0.3 (capacidade de aporte, reserva de
+     emergência já formada ou não).
+
+   Combine as 4 respostas numa classificação **conservador** (baixa tolerância + horizonte curto +
+   conhecimento básico), **moderado** (fatores mistos, tolerância/horizonte médios) ou **arrojado**
+   (alta tolerância + horizonte longo + conhecimento avançado + situação financeira consolidada) —
+   sem fórmula rígida de peso, é julgamento sobre o conjunto. Sempre **apresente a classificação
+   derivada de volta pro investidor e peça confirmação** antes de gravar — se ele discordar (ex.:
+   "acho que sou mais conservador do que isso"), respeite a correção dele, mas registre os 4
+   fatores originais mesmo assim (não apague o dado bruto).
 2. **Objetivos e prazos:** para cada objetivo que o investidor mencionar, pergunte o prazo —
    **curto prazo** (até 1 ano: foco em liquidez e segurança, ex. reserva de emergência),
    **médio prazo** (1 a 5 anos: ganho real acima da inflação com risco controlado) ou
@@ -50,6 +69,11 @@ Grave em `perfil-investidor.json`:
 ```json
 {
   "perfilRisco": "moderado",
+  "perfilRiscoFatores": {
+    "toleranciaPerda": "media",
+    "conhecimentoMercado": "intermediario",
+    "confirmadoPeloInvestidor": true
+  },
   "objetivos": [{"nome": "reserva de emergencia", "prazo": "curto"}, {"nome": "aposentadoria", "prazo": "longo", "anoAlvo": 2050}],
   "reservaEmergenciaOk": true,
   "cienteDeCustosEImpostos": true,
@@ -57,6 +81,10 @@ Grave em `perfil-investidor.json`:
   "ultimaRevisao": "2026-08-30"
 }
 ```
+
+`perfilRiscoFatores` guarda os fatores brutos que geraram `perfilRisco` (horizonte e situação
+financeira já vêm de `objetivos`/`reservaEmergenciaOk`, não precisam repetir aqui) —
+`confirmadoPeloInvestidor: false` significa que o investidor corrigiu a classificação derivada.
 
 `ultimaRevisao` é a data de hoje (formato `AAAA-MM-DD`) — o `/status` usa esse campo pra lembrar de
 rodar `/instalar` de novo (revisão do diagnóstico, não do zero) quando passar muito tempo, ou
