@@ -24,6 +24,7 @@ Started: sáb 29 ago 2026 19:31:33 -03
 - Log manual de transacoes (fh-US-002): `bin/transacao.sh <slug> registrar <tipo> <valor> [data]` faz append atomico em `<slug>/transacoes.json` (`[{data,tipo,valor}]`); tipo usa enum `aporte|resgate|compra|venda`, valor e numero positivo e data omitida usa o dia local.
 - Benchmark BR (fh-US-003): `bin/benchmark-quote.sh <slug> br` delega a `bin/brapi-quote.sh` com ticker `^BVSP`, `BRAPI_RANGE=3mo` e `BRAPI_INTERVAL=1d`; token, TTL e cache historico `<slug>/_cache/brapi/^BVSP-3mo-1d.json` permanecem responsabilidade do cliente brapi existente.
 - Benchmark US (fh-US-004): `bin/benchmark-quote.sh <slug> us` usa o override de processo `BENCHMARK_QUOTE` (mesmo argv `slug ticker mercado` de `RISCO_HISTORY`/`ALOCACAO_QUOTE`) com ticker fixo `^GSPC`. Sem a variavel: stderr + exit 1 no gap oficial; yfinance e so documentacao (usage/erro), nao client. Nao le `.mcp.json` nem `.env`. Fake nomeado: `tests/helpers/fake-benchmark-quote.sh`.
+- Diagnostico sem historico (fh-US-005): `bin/diagnostico.sh` + `bin/diagnostico-report.py`. So snapshot de `holdings.json`. Concentracao = maior ticker por valor; exposicao cambial = `porMercado` br/us; liquidez = campo opcional `liquidez` (`D+0`/`D+1`, precedente `precoMedio`); DY 12m = `results[0].dividendYield` da brapi ou a string `indisponivel` (nunca inventa). Preco reusa `ALOCACAO_QUOTE`. Output JSON numerico, sem limite prescritivo. Fake DY: `BRAPI_DIVIDEND_YIELDS` no `fake-brapi-http.sh`.
 
 ## 2026-08-29 - wg-US-001
 - Implementado bin/setup.sh: cria <slug>/CLAUDE.md, <slug>/_memoria/, <slug>/.env (vazio), <slug>/.claude/settings.json (enabledPlugins vazio), <slug>/.gitignore (contendo .env). Idempotente via prompt y/N (read -r -p), sem flag de bypass; recusa/erro nao altera nada.
@@ -260,5 +261,17 @@ Started: sáb 29 ago 2026 19:31:33 -03
   - RED desta story foi na iteracao anterior (4 testes, script ainda sem ramo us); GREEN ja commitado em 8474b79 antes do GATE 6.
   - GATE 6: TDR `validated=yes mechanism=genuine` (AC1 inject ^GSPC; AC2/AC3 gap oficial + nao-MCP, 0 survivors); aderencia PASS via qa-reviewer (APROVA, 0 findings).
 - GATE 1: tests passing (118/118) | GATE 2: lint clean (`bash -n`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (Bash/Bats/Python sem tooling ou threshold) | GATE 5: committed at 8474b79 | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
+---
+
+## 2026-08-30 21:15:00 -0300 - fh-US-005
+- What was implemented: `bin/diagnostico.sh` + `bin/diagnostico-report.py` reportam concentracao no maior ativo, % por mercado br/us, % em liquidez D+0/D+1 (campo opcional `liquidez` em holdings.json) e DY 12m via brapi `dividendYield` (senao a string `indisponivel`). Output JSON sem limite prescritivo.
+- Files changed: `bin/diagnostico.sh`, `bin/diagnostico-report.py`, `tests/diagnostico.bats`, `tests/helpers/fake-brapi-http.sh`, `CLAUDE.md`, `.ralph/investos/attempts.log`, `.ralph/investos/prd.json`, `.ralph/investos/progress.txt`.
+- Resolution: lidos `CLAUDE.md`, `ivt-quality:backend-testing`, precedente `bin/alocacao.sh` + campo opcional `precoMedio` em `perdas.sh`. `.claude/skills/` nao existe neste repo. Open question parked (log de dividendos em transacoes.json) resolvida pelo AC: DY vem da brapi, nao de transacoes. Liquidez nao mapeia classe→D+0/D+1 (inventaria regra de mercado).
+- Learnings for future iterations:
+  - Campo opcional em holdings (como `precoMedio`) e o precedente pra dado declarado pelo usuario sem quebrar o schema exigido por alocacao/risco.
+  - DY US fica `indisponivel` de proposito: a fonte do AC e a brapi, nao o MCP Alpha Vantage.
+  - GATE 6: tdr-runner/qa-reviewer nao resolvem como `subagent_type` neste harness Grok; despacho via general-purpose carregando o contrato (mesmo precedente de fh-US-004). Mutation 4x (concentracao hardcoded, liquidez zerada, DY inventado, texto prescritivo) todas killed; aderencia PASS com 2 LOW.
+- Achados LOW do qa-reviewer (nao-bloqueantes, backlog): (1) teste de DY numerico so no caminho BR-only (sem `ALOCACAO_QUOTE`); o fallback `brapi_dividend_yield` com carteira mista nao e asserido com DY presente; (2) se `ALOCACAO_QUOTE` passar `dividendYield`, US deixaria de ser forçado a `indisponivel`. Nenhum e X→Z.
+- GATE 1: tests passing (126/126) | GATE 2: lint clean (`bash -n`; shellcheck indisponivel) | GATE 3: typecheck clean (`bash -n`, `py_compile`, `jq empty`) | GATE 4: coverage n/a (Bash/Bats/Python sem tooling ou threshold) | GATE 5: committed at 77bc00a | GATE 6: guarded-impl-loop PASS (tdr: validated=yes mechanism=genuine; adherence: PASS)
 ---
 
