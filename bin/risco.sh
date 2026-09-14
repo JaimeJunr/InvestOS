@@ -51,7 +51,16 @@ collect_histories() {
     if [ -n "$preco_manual" ]; then
       continue
     fi
-    payload=$(history_payload "$slug" "$ticker" "$mercado")
+    # Guarda propria (mesma logica de achados.sh/collect_concentracao_series):
+    # com RISCO_HISTORY injetado a chamada e direta e sem guarda interna, entao
+    # exit != 0 OU stdout que nao e JSON valido tem que virar "[]" aqui - senao
+    # `set -e` mata o script inteiro ou o `--argjson` abaixo quebra com JSON
+    # invalido. NAO suprimir o stderr do provider: e a unica pista acionavel
+    # que o investidor tem pra resolver (ex.: falta BRAPI_TOKEN/chave MCP).
+    if ! payload=$(history_payload "$slug" "$ticker" "$mercado") \
+       || ! jq -e . >/dev/null 2>&1 <<<"$payload"; then
+      payload='[]'
+    fi
     series=$(jq --arg t "$ticker" --argjson s "$payload" '.[$t] = $s' <<<"$series")
   done < <(jq -c '.posicoes[] | {ticker: (.ticker|tostring|ascii_upcase), mercado: (.mercado|ascii_downcase), precoManual: (.precoManual // null)}' "$holdings")
   printf '%s\n' "$series" > "$dest"
