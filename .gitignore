@@ -9,3 +9,4 @@ __pycache__/
 # docs/desenvolvimento/contribuindo.md sobre o processo /prd -> /ralph).
 .ralph/
 
+.depth-loop/
