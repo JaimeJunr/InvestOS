@@ -149,6 +149,100 @@ assert report["porLiquidez"]["D+1"]["percentual"] == 0, report
   [ "$status" -eq 0 ]
 }
 
+@test "prazos com mesmo inteiro caem no mesmo balde: D+007 e D+7 somam" {
+  seed_portfolio acme
+  write_prices
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "liquidez": "D+007"},
+            {"ticker": "CAIXA", "quantidade": 400, "classe": "renda-fixa", "mercado": "br", "liquidez": "D+7"},
+        ]
+    }, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+# PETR4=1500 em D+007 e CAIXA=400 em D+7 sao o mesmo prazo: um balde com 1900.
+assert "D+007" not in report["porLiquidez"], report["porLiquidez"]
+assert report["porLiquidez"]["D+7"]["valor"] == 1900, report["porLiquidez"]
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "liquidez com digito unicode nao-decimal falha explicitamente, sem traceback" {
+  seed_portfolio acme
+  write_prices
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "liquidez": "D+²"},
+        ]
+    }, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Liquidez invalida"* ]]
+  [[ "$output" != *"Traceback"* ]]
+}
+
+@test "posicao com liquidez D+30: balde D+30 aparece e D+0/D+1 seguem presentes" {
+  seed_portfolio acme
+  write_prices
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "liquidez": "D+30"},
+            {"ticker": "CAIXA", "quantidade": 400, "classe": "renda-fixa", "mercado": "br", "liquidez": "D+0"},
+        ]
+    }, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+# PETR4=1500, CAIXA=400, total=1900
+d30 = report["porLiquidez"]["D+30"]
+d0 = report["porLiquidez"]["D+0"]
+d1 = report["porLiquidez"]["D+1"]
+assert d30["valor"] == 1500, d30
+assert abs(d30["percentual"] - 1500 / 1900) < 1e-9, d30
+assert d0["valor"] == 400, d0
+assert d1["valor"] == 0, d1
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "liquidez em formato invalido: falha citando o valor recebido" {
+  seed_portfolio acme
+  write_prices
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "liquidez": "diaria"},
+        ]
+    }, fh)
+PY
+
+  run "$SCRIPT" acme
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"diaria"* ]]
+}
+
 @test "DY 12m vem da brapi quando o campo dividendYield existe" {
   unset ALOCACAO_QUOTE
   seed_portfolio acme

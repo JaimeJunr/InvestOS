@@ -33,7 +33,7 @@ algumas semanas/meses de uso real.
 
 | Comando | O que reporta | Depende de |
 |---------|----------------|------------|
-| `bin/diagnostico.sh` | Concentração no maior ativo, exposição br/us, % em liquidez D+0/D+1, dividend yield 12m | só `holdings.json` atual |
+| `bin/diagnostico.sh` | Concentração no maior ativo, exposição br/us, % em liquidez D+<n>, dividend yield 12m | só `holdings.json` atual |
 | `bin/contra-benchmark.sh` | Beta, Alfa, R², Tracking Error | `nav-historico.json` + benchmark |
 | `bin/retorno.sh` | TWR (retorno ponderado pelo tempo) e MWR (ponderado pelo dinheiro) | `nav-historico.json` + `transacoes.json` |
 | `bin/eficiencia.sh` | Sortino, giro de carteira, alíquota efetiva de IR | `nav-historico.json` + `transacoes.json` |

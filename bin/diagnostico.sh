@@ -14,10 +14,10 @@ usage() {
 Uso: bin/diagnostico.sh <slug>
 
 Reporta concentracao no maior ativo, exposicao por mercado (br/us),
-percentual em liquidez D+0/D+1 e dividend yield 12m por posicao.
+percentual em liquidez D+<n> e dividend yield 12m por posicao.
 Posicoes em <slug>/holdings.json
 ({"posicoes": [{"ticker","quantidade","classe","mercado","liquidez?","precoManual?"}]}).
-Campo liquidez e opcional (D+0 ou D+1). DY 12m vem da brapi quando o
+Campo liquidez e opcional (formato D+<n>, n inteiro >= 0). DY 12m vem da brapi quando o
 campo dividendYield existe; senao marca "indisponivel".
 Valoriza BR via brapi-quote.sh; US/global exige ALOCACAO_QUOTE injetado.
 Posicao com precoManual (ex.: Tesouro Direto) usa esse valor direto -
@@ -33,20 +33,7 @@ require_file() {
   fi
 }
 
-quote_payload() {
-  local slug="$1" ticker="$2" mercado="$3" raw
-  if [ -n "${ALOCACAO_QUOTE:-}" ]; then
-    "$ALOCACAO_QUOTE" "$slug" "$ticker" "$mercado"
-    return
-  fi
-  if [ "$mercado" = "br" ]; then
-    raw=$("$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker")
-    jq -ce '{preco: .results[0].data.regularMarketPrice}' <<<"$raw"
-    return
-  fi
-  echo "Cotacao indisponivel: recebido mercado '$mercado' ticker '$ticker', esperado mercado 'br' (brapi.dev) ou ALOCACAO_QUOTE injetado (MCP US e config declarativa, sem client HTTP)." >&2
-  exit 1
-}
+source "$SCRIPT_DIR/lib-cotacao.sh"
 
 brapi_dividend_yield() {
   local slug="$1" ticker="$2" raw
@@ -118,7 +105,7 @@ if [ ! -d "$SLUG" ]; then
 fi
 
 HOLDINGS="$SLUG/holdings.json"
-require_file "$HOLDINGS" 'JSON {"posicoes": [{ticker, quantidade, classe, mercado, liquidez?}, ...]}'
+require_file "$HOLDINGS" 'JSON {"posicoes": [{ticker, quantidade, classe, mercado, liquidez? (D+<n>)}, ...]}'
 
 QUOTES=$(mktemp)
 trap 'rm -f "$QUOTES"' EXIT
