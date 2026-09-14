@@ -3,76 +3,16 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
-MERCADOS = {"br", "us"}
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib_report import as_decimal, die, load_holdings, load_json, print_report
+
 LIQUIDEZ_KEYS = ("D+0", "D+1")
 INDISPONIVEL = "indisponivel"
-
-
-def die(message: str) -> None:
-    raise SystemExit(message)
-
-
-def load_json(path: str, expected: str) -> Any:
-    try:
-        with open(path, encoding="utf-8") as handle:
-            return json.load(handle)
-    except FileNotFoundError:
-        die(f"Arquivo invalido: recebido path inexistente '{path}', esperado {expected}.")
-    except json.JSONDecodeError as exc:
-        die(f"Arquivo invalido: recebido JSON invalido em '{path}' ({exc}), esperado {expected}.")
-
-
-def as_decimal(value: Any, field: str, received: Any) -> Decimal:
-    try:
-        number = Decimal(str(value))
-    except Exception:
-        die(f"Numero invalido: recebido {field}={value!r} em {received!r}, esperado numero.")
-    return number
-
-
-def optional_liquidez(item: dict[str, Any]) -> str | None:
-    raw = item.get("liquidez")
-    if raw is None:
-        return None
-    text = str(raw).strip().upper()
-    return text or None
-
-
-def validate_holding(item: Any, index: int) -> dict[str, Any]:
-    expected = "{ticker, quantidade, classe, mercado, liquidez?}"
-    if not isinstance(item, dict):
-        die(f"Posicao invalida: recebido {item!r} no indice {index}, esperado objeto {expected}.")
-    ticker = str(item.get("ticker") or "").strip().upper()
-    classe = str(item.get("classe") or "").strip()
-    mercado = str(item.get("mercado") or "").strip().lower()
-    quantidade = as_decimal(item.get("quantidade"), "quantidade", item)
-    if not ticker or not classe or mercado not in MERCADOS or quantidade <= 0:
-        die(
-            f"Posicao invalida: recebido {item!r}, esperado ticker nao-vazio, "
-            f"quantidade > 0, classe nao-vazia e mercado um de: br, us."
-        )
-    entry = {"ticker": ticker, "quantidade": quantidade, "classe": classe, "mercado": mercado}
-    liquidez = optional_liquidez(item)
-    if liquidez is not None:
-        entry["liquidez"] = liquidez
-    return entry
-
-
-def load_holdings(path: str) -> list[dict[str, Any]]:
-    expected = 'JSON {"posicoes": [{ticker, quantidade, classe, mercado, liquidez?}, ...]}'
-    payload = load_json(path, expected)
-    rows = payload.get("posicoes") if isinstance(payload, dict) else None
-    if not isinstance(rows, list) or not rows:
-        die(
-            f"Holdings invalido: recebido {payload!r} em '{path}', "
-            'esperado JSON {"posicoes": [...]} com pelo menos 1 posicao.'
-        )
-    return [validate_holding(item, index) for index, item in enumerate(rows)]
 
 
 def load_quote_entry(ticker: str, info: Any, payload: Any) -> dict[str, Any]:
@@ -138,6 +78,14 @@ def slice_report(values: dict[str, Decimal], total: Decimal, keys: tuple[str, ..
     return report
 
 
+def liquidez_keys(values: dict[str, Decimal]) -> tuple[str, ...]:
+    # Piso D+0/D+1 sempre presente (invariante de porLiquidez), mais qualquer
+    # prazo observado nas posicoes, ordenado numericamente (lexicografico erra:
+    # "D+1" < "D+30" < "D+0" como texto).
+    observed = set(values) | set(LIQUIDEZ_KEYS)
+    return tuple(sorted(observed, key=lambda key: int(key[2:])))
+
+
 def concentration_report(values: dict[str, Decimal], total: Decimal) -> dict[str, Any]:
     ticker = max(values, key=lambda name: (values[name], name))
     valor = values[ticker]
@@ -168,11 +116,12 @@ def build_report(positions: list[dict[str, Any]], quotes: dict[str, dict[str, An
     total = sum((position_value(item, quotes) for item in positions), Decimal("0"))
     if total <= 0:
         die(f"Diagnostico invalido: recebido total {total} a partir das posicoes, esperado valor de mercado > 0.")
+    valores_liquidez = grouped_values(positions, quotes, "liquidez")
     return {
         "total": float(total),
         "concentracao": concentration_report(values_by_ticker(positions, quotes), total),
         "porMercado": slice_report(grouped_values(positions, quotes, "mercado"), total, ("br", "us")),
-        "porLiquidez": slice_report(grouped_values(positions, quotes, "liquidez"), total, LIQUIDEZ_KEYS),
+        "porLiquidez": slice_report(valores_liquidez, total, liquidez_keys(valores_liquidez)),
         "dividendYield12m": dividend_yield_rows(positions, quotes),
     }
 
@@ -180,9 +129,16 @@ def build_report(positions: list[dict[str, Any]], quotes: dict[str, dict[str, An
 def main() -> None:
     if len(sys.argv) != 3:
         die(f"Uso invalido: recebido {sys.argv!r}, esperado diagnostico-report.py <holdings.json> <quotes.json>")
-    report = build_report(load_holdings(sys.argv[1]), load_quotes(sys.argv[2]))
-    json.dump(report, sys.stdout, ensure_ascii=False)
-    sys.stdout.write("\n")
+    report = build_report(
+        load_holdings(
+            sys.argv[1],
+            expected_holdings='JSON {"posicoes": [{ticker, quantidade, classe, mercado, liquidez?}, ...]}',
+            expected_item="{ticker, quantidade, classe, mercado, liquidez?}",
+            suporta_liquidez=True,
+        ),
+        load_quotes(sys.argv[2]),
+    )
+    print_report(report)
 
 
 if __name__ == "__main__":

@@ -3,62 +3,15 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib_report import as_decimal, die, load_holdings, load_json, print_report
+
 WEIGHT_TOLERANCE = Decimal("0.000001")
-MERCADOS = {"br", "us"}
-
-
-def die(message: str) -> None:
-    raise SystemExit(message)
-
-
-def load_json(path: str, expected: str) -> Any:
-    try:
-        with open(path, encoding="utf-8") as handle:
-            return json.load(handle)
-    except FileNotFoundError:
-        die(f"Arquivo invalido: recebido path inexistente '{path}', esperado {expected}.")
-    except json.JSONDecodeError as exc:
-        die(f"Arquivo invalido: recebido JSON invalido em '{path}' ({exc}), esperado {expected}.")
-
-
-def as_decimal(value: Any, field: str, received: Any) -> Decimal:
-    try:
-        number = Decimal(str(value))
-    except Exception:
-        die(f"Numero invalido: recebido {field}={value!r} em {received!r}, esperado numero.")
-    return number
-
-
-def validate_holding(item: Any, index: int) -> dict[str, Any]:
-    expected = "{ticker, quantidade, classe, mercado}"
-    if not isinstance(item, dict):
-        die(f"Posicao invalida: recebido {item!r} no indice {index}, esperado objeto {expected}.")
-    ticker = str(item.get("ticker") or "").strip().upper()
-    classe = str(item.get("classe") or "").strip()
-    mercado = str(item.get("mercado") or "").strip().lower()
-    quantidade = as_decimal(item.get("quantidade"), "quantidade", item)
-    if not ticker or not classe or mercado not in MERCADOS or quantidade <= 0:
-        die(
-            f"Posicao invalida: recebido {item!r}, esperado ticker nao-vazio, "
-            f"quantidade > 0, classe nao-vazia e mercado um de: br, us."
-        )
-    return {"ticker": ticker, "quantidade": quantidade, "classe": classe, "mercado": mercado}
-
-
-def load_holdings(path: str) -> list[dict[str, Any]]:
-    payload = load_json(path, 'JSON {"posicoes": [{ticker, quantidade, classe, mercado}, ...]}')
-    rows = payload.get("posicoes") if isinstance(payload, dict) else None
-    if not isinstance(rows, list) or not rows:
-        die(
-            f"Holdings invalido: recebido {payload!r} em '{path}', "
-            'esperado JSON {"posicoes": [...]} com pelo menos 1 posicao.'
-        )
-    return [validate_holding(item, index) for index, item in enumerate(rows)]
 
 
 def validate_weights(weights: Any, label: str) -> dict[str, Decimal]:
@@ -152,9 +105,17 @@ def main() -> None:
             f"Uso invalido: recebido {sys.argv!r}, "
             "esperado alocacao-report.py <holdings.json> <alocacao-alvo.json> <quotes.json>"
         )
-    report = build_report(load_holdings(sys.argv[1]), load_quotes(sys.argv[3]), load_alvo(sys.argv[2]))
-    json.dump(report, sys.stdout, ensure_ascii=False)
-    sys.stdout.write("\n")
+    report = build_report(
+        load_holdings(
+            sys.argv[1],
+            expected_holdings='JSON {"posicoes": [{ticker, quantidade, classe, mercado}, ...]}',
+            expected_item="{ticker, quantidade, classe, mercado}",
+            suporta_liquidez=False,
+        ),
+        load_quotes(sys.argv[3]),
+        load_alvo(sys.argv[2]),
+    )
+    print_report(report)
 
 
 if __name__ == "__main__":
