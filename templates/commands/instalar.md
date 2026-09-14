@@ -14,8 +14,9 @@ esses arquivos, um de cada vez, usando `AskUserQuestion` quando fizer sentido.
 Rode a partir da raiz do InvestOS (não de dentro desta pasta). Se `holdings.json` ou
 `alocacao-alvo.json` já existirem neste portfolio, avise e pergunte se quer sobrescrever antes de
 continuar — nunca sobrescreva sem confirmação explícita. Se o `/status` sugeriu rodar `/instalar`
-de novo só pra revisar o diagnóstico (perfil, objetivos, `ultimaRevisao`), deixe claro que dá pra
-atualizar só o Passo 0 (`perfil-investidor.json`) sem mexer em `holdings.json`/`alocacao-alvo.json`.
+de novo só pra revisar o diagnóstico (perfil, objetivos, `ultimaRevisao`, `implicacoes[]`), deixe
+claro que dá pra atualizar só o Passo 0 (`perfil-investidor.json`) sem mexer em
+`holdings.json`/`alocacao-alvo.json`.
 
 ## Passo 0 — Diagnóstico do investidor (`perfil-investidor.json`)
 
@@ -78,20 +79,37 @@ Grave em `perfil-investidor.json`:
   "reservaEmergenciaOk": true,
   "cienteDeCustosEImpostos": true,
   "expectativasAlinhadas": true,
-  "ultimaRevisao": "2026-08-30"
+  "ultimaRevisao": "2026-08-30",
+  "implicacoes": [
+    {
+      "pergunta": "Essa posição em PETR4 é a maior da carteira e você marcou aposentadoria como objetivo de mais longo prazo — como você enxerga essa posição dentro desse objetivo?",
+      "respostaDoInvestidor": "acho que ta ok, é uma empresa solida",
+      "quedaEstimadaPeloInvestidor": null,
+      "data": "2026-08-30"
+    },
+    {
+      "pergunta": "E se esse ativo caísse pela metade num ano ruim, o que você acha que aconteceria?",
+      "respostaDoInvestidor": "ia doer mas eu seguraria",
+      "quedaEstimadaPeloInvestidor": 0.5,
+      "data": "2026-08-30"
+    }
+  ]
 }
 ```
 
 `perfilRiscoFatores` guarda os fatores brutos que geraram `perfilRisco` (horizonte e situação
 financeira já vêm de `objetivos`/`reservaEmergenciaOk`, não precisam repetir aqui) —
 `confirmadoPeloInvestidor: false` significa que o investidor corrigiu a classificação derivada.
+`implicacoes` guarda o registro bruto do Passo 2 (implicação) — a entrevista de suitability em si
+não muda por causa dele, é um array que só cresce conforme o investidor responde às perguntas
+daquele passo.
 
 `ultimaRevisao` é a data de hoje (formato `AAAA-MM-DD`) — o `/status` usa esse campo pra lembrar de
 rodar `/instalar` de novo (revisão do diagnóstico, não do zero) quando passar muito tempo, ou
 quando um `anoAlvo` estiver se aproximando.
 
 Use o perfil de risco registrado aqui para **sugerir** um ponto de partida de alocação-alvo no
-Passo 2 (ex.: perfil conservador tende a mais peso em renda fixa, arrojado tende a mais peso em
+Passo 3 (ex.: perfil conservador tende a mais peso em renda fixa, arrojado tende a mais peso em
 ações) — nunca imponha o peso sugerido; a decisão final de alocação é sempre do usuário.
 
 ## Passo 1 — Posições (`holdings.json`)
@@ -109,16 +127,63 @@ ticker de mercado pra esses — mesmo que a brapi tenha símbolos de Tesouro Dir
 exigem plano pago; `precoManual` é o caminho que funciona sem custo. Deixe claro que o valor
 precisa ser atualizado manualmente (não é cotação ao vivo).
 
+Nesse mesmo ponto (posição sem ticker cotável), pergunte também o **prazo de resgate** e grave
+como `liquidez`, no formato `"D+<n>"` (`n` dias, inteiro >= 0 — `"D+0"` resgate no mesmo dia,
+`"D+1"` no dia seguinte, `"D+30"`, `"D+180"` etc.). Este passo é o único lugar do sistema que
+produz esse dado — sem gravar aqui, o campo nunca é preenchido por ninguém. Se o investidor não
+souber o prazo, não grave o campo (ausente é diferente de ilíquido — não invente `"D+0"` só pra
+preencher).
+
 Grave em `holdings.json`:
 
 ```json
 {"posicoes": [
   {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br"},
-  {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74}
+  {"ticker": "NTN-B mai/2055", "quantidade": 4, "classe": "renda-fixa", "mercado": "br", "precoManual": 1005.74, "liquidez": "D+1"}
 ]}
 ```
 
-## Passo 2 — Alocação-alvo (`alocacao-alvo.json`)
+## Passo 2 — Implicação (registrado em `perfil-investidor.json`)
+
+Se `holdings.json` ainda estiver vazio (nenhuma posição registrada no Passo 1), pule este passo —
+não há posição concreta pra conversar a respeito.
+
+Este passo é **só perguntas**. Você não afirma número, não afirma risco, não afirma consequência
+e não responde a própria pergunta — se o investidor devolver "sei lá, você acha que é muito?",
+devolva a pergunta a ele, nunca dê o veredito. A superfície de entrevista é socrática pura; afirmar
+consequência é trabalho do relatório, não deste comando.
+
+Calibre o vocabulário por `perfilRiscoFatores.conhecimentoMercado` (já coletado no Passo 0): para
+`basico`, use termos concretos do dia a dia ("cair pela metade"); para `intermediario` — o caso mais
+comum — use o termo técnico mas explique o mecanismo na mesma frase ("uma queda forte, um drawdown
+de uns 40%"); para `avancado`, pode usar o termo direto (volatilidade, drawdown). Nunca
+condescendência, nunca jargão gratuito.
+
+Pelo menos uma pergunta deve amarrar uma posição concreta a um objetivo concreto já declarado no
+Passo 0 — por exemplo, a maior posição da carteira e o objetivo de maior prazo. Pelo menos uma
+pergunta deve pedir ao investidor que nomeie um cenário de queda pra alguma posição — o número é
+dele, não do sistema. Exemplos de pergunta boa, no tom deste comando:
+
+- "Essa posição em PETR4 é a maior da sua carteira, e aposentadoria é o objetivo de prazo mais
+  longo que você registrou — como você enxerga essa posição dentro desse objetivo?"
+- "E se esse ativo caísse pela metade num ano ruim, o que você acha que aconteceria com o seu
+  plano?" (pra `conhecimentoMercado: basico`) ou "qual drawdown você toleraria nessa posição num
+  ano ruim?" (pra `avancado`)
+- "Você tem uma posição relevante em renda variável dentro de um objetivo de curto prazo — o que
+  te faz sentir confortável com isso?"
+- "Se essa posição não existisse hoje, você compraria ela de novo com o dinheiro que teria em
+  mãos?"
+
+O investidor pode recusar responder qualquer uma delas: siga sem gravar aquele item, sem insistir
+e sem reformular a mesma pergunta de outro jeito pra tentar forçar uma resposta.
+
+Grave cada resposta em `perfil-investidor.json`, no array `implicacoes[]` (ver exemplo no Passo
+0) — `respostaDoInvestidor` é a frase do investidor **verbatim**, nunca reescrita ou resumida:
+é essa frase que o relatório vai citar de volta pra ele depois, e reescrita perde o valor.
+`quedaEstimadaPeloInvestidor` é uma fração (ex.: `0.5` pra "metade") só quando ele nomeou um
+cenário; deixe `null` quando ele não nomeou nenhum número.
+
+## Passo 3 — Alocação-alvo (`alocacao-alvo.json`)
 
 Antes de perguntar, ofereça uma **sugestão** de ponto de partida com base no `perfilRisco` do
 Passo 0 (ex.: conservador → mais peso em renda fixa; arrojado → mais peso em ações) — deixe claro
@@ -133,7 +198,7 @@ Grave em `alocacao-alvo.json`:
 {"porClasse": {"acoes": 0.6, "renda-fixa": 0.4}, "porMercado": {"br": 0.7, "us": 0.3}, "threshold": 0.05}
 ```
 
-## Passo 3 — Watchlist de fundos (`watchlist-fundos.json`, opcional)
+## Passo 4 — Watchlist de fundos (`watchlist-fundos.json`, opcional)
 
 Só pergunte se `holdings.json` tiver alguma posição com `classe` de fundo ou se o domínio
 `dados-mercado` estiver habilitado para o mercado `br`. Peça o(s) CNPJ(s) (14 dígitos) dos fundos
@@ -147,7 +212,7 @@ Grave em `watchlist-fundos.json`:
 
 Pule este passo (não crie o arquivo) se não houver fundo nenhum.
 
-## Passo 4 — Histórico real, se o investidor já tiver (opcional)
+## Passo 5 — Histórico real, se o investidor já tiver (opcional)
 
 Se em qualquer momento da entrevista o investidor mencionar ou colar dados reais de extrato da
 corretora (patrimônio em uma data, rentabilidade acumulada, valor inicial vs. atual) — **não
@@ -168,6 +233,6 @@ mãos. Quanto mais pontos reais ele tiver (extratos mensais, por exemplo), melho
 
 ## Ao final
 
-Resuma o que foi gravado (diagnóstico, posições, alocação-alvo, watchlist se houver) e sugira o
-próximo comando: `bin/alocacao.sh <slug>` para ver a alocação atual, ou `/status` pra um briefing
-rápido.
+Resuma o que foi gravado (diagnóstico, posições, implicação registrada se houver, alocação-alvo,
+watchlist se houver) e sugira o próximo comando: `bin/alocacao.sh <slug>` para ver a alocação
+atual, ou `/status` pra um briefing rápido.

@@ -156,6 +156,11 @@ jq -n --argjson plugins "$ENABLED_PLUGINS" \
 jq -n --arg mercado "$MERCADO" '{mercado: $mercado}' > "$TARGET_DIR/portfolio.json"
 
 rm -rf "$TARGET_DIR/.claude/skills"
+# A camada consultiva e o produto, nao um add-on de dominio: vai em todo portfolio.
+# Precisa do mkdir proprio porque o rm -rf acima apagou o diretorio e os mkdir dos
+# ramos de dominio abaixo so rodam quando aquele dominio esta habilitado.
+mkdir -p "$TARGET_DIR/.claude/skills"
+cp -r "$SKILLS_TEMPLATE/assessoria" "$TARGET_DIR/.claude/skills/"
 if jq -e '.["research"] == true' <<<"$ENABLED_PLUGINS" >/dev/null; then
   mkdir -p "$TARGET_DIR/.claude/skills"
   if [ "$MERCADO" != "us" ]; then

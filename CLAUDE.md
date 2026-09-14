@@ -2,6 +2,36 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Princípio de produto (lê isto antes de desenhar qualquer feature)
+
+O InvestOS tem uma ordem de identidade que precede qualquer funcionalidade:
+
+1. **Primeiro é uma ferramenta.** Traz dado, calcula, mostra projeção. Número medido, nunca
+   inventado — quando o dado falta, o campo sai como `indisponivel` (padrão já vigente no
+   `diagnostico.sh` para o DY; `retorno.sh`/`eficiencia.sh` usam `dado insuficiente` e
+   `contra-benchmark.sh` usa `historico insuficiente`).
+2. **Depois é um agente especialista.** Aconselha e ensina o investidor sobre o que aquele número
+   significa. Essa camada é o produto — o InvestOS não é um agregador de cotação.
+3. **Nunca decide pela pessoa.** A decisão de comprar ou vender é sempre do dono do dinheiro.
+
+O método é **socrático**: ensina fazendo a pergunta que revela a consequência, e respondendo com o
+número medido — não emitindo ordem. `Sua concentração em X é 41%; a pior queda que esse ativo já
+teve na série foi -62%` é o registro correto. `Recomendo vender X` não é.
+
+E **se adapta ao investidor, sempre**, em dois eixos que o `/instalar` já coleta e que hoje são
+subaproveitados: `perfilRisco` calibra **o que** merece ser apontado (o que alarma um conservador é
+a tese de um arrojado), e `perfilRiscoFatores.conhecimentoMercado` calibra **como** aquilo é
+explicado — sem jargão para quem está começando, sem repetir o óbvio para quem já domina. A
+adaptação muda profundidade e vocabulário; nunca muda o fato nem o número apresentado.
+
+A consequência prática para quem contribui: uma feature que **afirma fato calculado** passa; uma
+que **emite ordem de compra/venda** não passa sem decisão explícita do dono do projeto. Além de
+contrariar o princípio, prescrição encosta na fronteira de consultoria de valores mobiliários
+regulada pela [Resolução CVM 19](https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/001/resol019consolid.pdf),
+que exige registro na autarquia e disponibilização do código-fonte para análise. A leitura atual é
+que o InvestOS está fora desse escopo por ser self-service local (o usuário é o próprio dono do
+dinheiro; não há terceiro contratante), mas isso mudaria se o projeto virasse serviço distribuído.
+
 ## Creating a new portfolio
 
 Portfolios are created **outside** the InvestOS clone (same pattern as
@@ -103,7 +133,7 @@ If the brokerage connection fails or the token expired, the script keeps the las
 
 ### Report scripts (bash driver + Python renderer)
 
-`alocacao.sh`, `risco.sh`, `diagnostico.sh`, `contra-benchmark.sh`, `retorno.sh`, `eficiencia.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, and `alocacao-alvo.json` when the report needs a target), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation and prints the report. `diagnostico.sh` reads only the current snapshot (optional `liquidez` on each holding, `D+0`/`D+1`) and never invents DY or prints a recommended limit. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion. `contra-benchmark.sh` reads `portfolio.json.mercado` to pick `^BVSP`/`^GSPC` (or both when `ambos`), aligns NAV snapshots to benchmark dates, and emits the string `historico insuficiente` instead of Beta/Alfa/R²/TE when fewer than 4 overlapping points remain. `retorno.sh` reads `<slug>/nav-historico.json` plus `<slug>/transacoes.json` and emits TWR (geometric chain of sub-period returns between snapshots, isolating `aporte`/`resgate` only) and MWR (holding-period IRR of those external flows + final NAV). Compra/venda are internal and ignored. Missing `transacoes.json` or fewer than 2 NAV snapshots emits the string `dado insuficiente` instead of a number. MWR is not annualized (NAV is not a daily series; same constraint as contra-benchmark). `eficiencia.sh` reads the same two files and emits Sortino (NAV period returns, MAR=0, downside deviation only, not annualized), turnover (`compra`+`venda` / mean NAV) and effective IR rate (`impostoPago` / `ganhoRealizado`, optional fields). Missing trades or tax fields emit `dado insuficiente` on that field only; Sortino still computes from NAV.
+`alocacao.sh`, `risco.sh`, `diagnostico.sh`, `contra-benchmark.sh`, `retorno.sh`, `eficiencia.sh`, and `rebalanceamento-report.py` (invoked by `rebalanceamento.sh`, which pipes through `alocacao.sh`'s output) follow the same shape: a bash script resolves and validates inputs (`holdings.json`, and `alocacao-alvo.json` when the report needs a target), fetches quotes/history through the injectable-override seam above, then hands a JSON payload to a Python script (`*-report.py`) that does the actual computation and prints the report. `diagnostico.sh` reads only the current snapshot (optional `liquidez` on each holding, format `D+<n>` with n integer >= 0) and never invents DY or prints a recommended limit. `rebalanceamento.sh` never writes to `holdings.json` and never places an order — it only prints a suggestion. `contra-benchmark.sh` reads `portfolio.json.mercado` to pick `^BVSP`/`^GSPC` (or both when `ambos`), aligns NAV snapshots to benchmark dates, and emits the string `historico insuficiente` instead of Beta/Alfa/R²/TE when fewer than 4 overlapping points remain. `retorno.sh` reads `<slug>/nav-historico.json` plus `<slug>/transacoes.json` and emits TWR (geometric chain of sub-period returns between snapshots, isolating `aporte`/`resgate` only) and MWR (holding-period IRR of those external flows + final NAV). Compra/venda are internal and ignored. Missing `transacoes.json` or fewer than 2 NAV snapshots emits the string `dado insuficiente` instead of a number. MWR is not annualized (NAV is not a daily series; same constraint as contra-benchmark). `eficiencia.sh` reads the same two files and emits Sortino (NAV period returns, MAR=0, downside deviation only, not annualized), turnover (`compra`+`venda` / mean NAV) and effective IR rate (`impostoPago` / `ganhoRealizado`, optional fields). Missing trades or tax fields emit `dado insuficiente` on that field only; Sortino still computes from NAV.
 
 ### Skills (`templates/skills/`)
 

@@ -436,6 +436,24 @@ assert_skill() {
   rm -rf "$FAKE_HOME"
 }
 
+@test "instalar.md tem passo de implicacao socratico e grava implicacoes[] com a resposta verbatim" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  grep -q "implicacoes" "acme/.claude/commands/instalar.md"
+  grep -q "respostaDoInvestidor" "acme/.claude/commands/instalar.md"
+  grep -q "quedaEstimadaPeloInvestidor" "acme/.claude/commands/instalar.md"
+  # A fronteira socratica da entrevista: o passo proibe afirmar consequencia.
+  grep -qi "so perguntas\|só perguntas" "acme/.claude/commands/instalar.md"
+  grep -qi "verbatim" "acme/.claude/commands/instalar.md"
+}
+
+@test "instalar.md coleta prazo de resgate como liquidez D+n" {
+  run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  grep -q "liquidez" "acme/.claude/commands/instalar.md"
+  grep -q 'D+<n>\|D+30\|D+180' "acme/.claude/commands/instalar.md"
+}
+
 @test "instalar.md pergunta ano-alvo dos objetivos e grava ultimaRevisao" {
   run bash -c "printf 'n\nn\nn\nn\nBR\n' | '$SCRIPT' ./acme"
   [ "$status" -eq 0 ]
@@ -459,4 +477,72 @@ assert_skill() {
   grep -q "bin/aporte.sh" "acme/.claude/commands/status.md"
   grep -q "bin/perdas.sh" "acme/.claude/commands/status.md"
   grep -qi "180 dias\|seis meses\|6 meses" "acme/.claude/commands/status.md"
+}
+
+# Testes de US-005: skill assessoria e incondicional (nao depende de nenhum dominio).
+
+@test "assessoria e instalada mesmo sem nenhum dominio habilitado" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/assessoria/SKILL.md" "assessoria" "achados.sh"
+}
+
+@test "assessoria e instalada junto com dominios habilitados (nao e apagada pelo rm -rf)" {
+  run bash -c "printf 'y\ny\ny\ny\nambos\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/assessoria/SKILL.md" "assessoria" "achados.sh"
+  [ -f "acme/.claude/skills/rebalanceamento/SKILL.md" ]
+}
+
+@test "assessoria SKILL.md cobre os quatro slugs de licao e proibe ordem de compra/venda" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  FILE="acme/.claude/skills/assessoria/SKILL.md"
+  grep -q "concentracao-por-ativo" "$FILE"
+  grep -q "desvio-da-alocacao-alvo" "$FILE"
+  grep -q "reserva-emergencia-ausente" "$FILE"
+  grep -q "liquidez-descasada-do-prazo" "$FILE"
+  grep -qi "nunca emit\|nao emit\|proibid" "$FILE"
+  grep -qi "ordem de compra\|compra/venda\|comprar\|vender" "$FILE"
+}
+
+@test "assessoria SKILL.md traz os tres niveis de calibragem por conhecimentoMercado" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  FILE="acme/.claude/skills/assessoria/SKILL.md"
+  grep -q "conhecimentoMercado" "$FILE"
+  # Os tres niveis precisam aparecer como exemplo REDIGIDO do mesmo achado (AC5), nao
+  # so citados: por isso exigimos a linha de exemplo de cada um, nao a palavra solta.
+  grep -q '\*\*basico\*\*' "$FILE"
+  grep -q '\*\*intermediario\*\*' "$FILE"
+  grep -q '\*\*avancado\*\*' "$FILE"
+}
+
+@test "assessoria sobrevive so ao dominio risco (que recria .claude/skills)" {
+  run bash -c "printf 'n\ny\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/assessoria/SKILL.md" "assessoria" "achados.sh"
+  [ -f "acme/.claude/skills/rebalanceamento/SKILL.md" ]
+}
+
+@test "assessoria continua integra ao rodar setup.sh duas vezes no mesmo diretorio" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  # O rm -rf de .claude/skills roda de novo na segunda passada; a copia incondicional
+  # precisa vir depois dele, senao a skill some so na regeracao.
+  run bash -c "printf 'y\nn\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  assert_skill "acme/.claude/skills/assessoria/SKILL.md" "assessoria" "achados.sh"
+}
+
+@test "assessoria SKILL.md distingue provider-nao-configurado de cotacao-ausente" {
+  run bash -c "printf 'n\nn\nn\nn\nbr\n' | '$SCRIPT' ./acme"
+  [ "$status" -eq 0 ]
+  FILE="acme/.claude/skills/assessoria/SKILL.md"
+  grep -q "provider-nao-configurado" "$FILE"
+  grep -q "cotacao-ausente" "$FILE"
+  grep -q "alvo-ausente" "$FILE"
+  # BRAPI_TOKEN faltando produz cotacao-ausente, nao provider-nao-configurado; a skill
+  # precisa dizer isso, senao orienta o investidor a configurar a coisa errada.
+  grep -q "BRAPI_TOKEN" "$FILE"
 }
