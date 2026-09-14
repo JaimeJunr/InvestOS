@@ -85,12 +85,14 @@ Grave em `perfil-investidor.json`:
       "pergunta": "Essa posição em PETR4 é a maior da carteira e você marcou aposentadoria como objetivo de mais longo prazo — como você enxerga essa posição dentro desse objetivo?",
       "respostaDoInvestidor": "acho que ta ok, é uma empresa solida",
       "quedaEstimadaPeloInvestidor": null,
+      "ticker": "PETR4",
       "data": "2026-08-30"
     },
     {
-      "pergunta": "E se esse ativo caísse pela metade num ano ruim, o que você acha que aconteceria?",
+      "pergunta": "Se sua carteira como um todo caísse pela metade num ano ruim, o que você acha que aconteceria?",
       "respostaDoInvestidor": "ia doer mas eu seguraria",
       "quedaEstimadaPeloInvestidor": 0.5,
+      "ticker": null,
       "data": "2026-08-30"
     }
   ]
@@ -102,7 +104,13 @@ financeira já vêm de `objetivos`/`reservaEmergenciaOk`, não precisam repetir 
 `confirmadoPeloInvestidor: false` significa que o investidor corrigiu a classificação derivada.
 `implicacoes` guarda o registro bruto do Passo 2 (implicação) — a entrevista de suitability em si
 não muda por causa dele, é um array que só cresce conforme o investidor responde às perguntas
-daquele passo.
+daquele passo. `ticker` é o símbolo exato de `holdings.json` (ex.: `"PETR4"`, nunca o nome da
+empresa) quando a pergunta foi sobre uma posição concreta, ou `null` quando foi sobre a carteira
+como um todo ou sobre um objetivo — existe pra que `bin/achados.sh` confronte automaticamente a
+queda que o investidor estimou com o drawdown histórico daquele mesmo ativo (US-006), sem depender
+de extrair o ticker da prosa da `pergunta`; não é redundante com o texto da pergunta por isso,
+mesmo que pareça à primeira vista. Item gravado antes desse campo existir continua válido — é
+aditivo, ausência não invalida a implicação.
 
 `ultimaRevisao` é a data de hoje (formato `AAAA-MM-DD`) — o `/status` usa esse campo pra lembrar de
 rodar `/instalar` de novo (revisão do diagnóstico, não do zero) quando passar muito tempo, ou
@@ -181,7 +189,10 @@ Grave cada resposta em `perfil-investidor.json`, no array `implicacoes[]` (ver e
 0) — `respostaDoInvestidor` é a frase do investidor **verbatim**, nunca reescrita ou resumida:
 é essa frase que o relatório vai citar de volta pra ele depois, e reescrita perde o valor.
 `quedaEstimadaPeloInvestidor` é uma fração (ex.: `0.5` pra "metade") só quando ele nomeou um
-cenário; deixe `null` quando ele não nomeou nenhum número.
+cenário; deixe `null` quando ele não nomeou nenhum número. Grave também `ticker`: o símbolo exato
+como está em `holdings.json` (ex.: `"PETR4"`) quando a pergunta amarrou uma posição concreta, ou
+`null` quando a pergunta foi sobre a carteira como um todo ou sobre um objetivo — nunca invente um
+ticker pra preencher o campo.
 
 ## Passo 3 — Alocação-alvo (`alocacao-alvo.json`)
 

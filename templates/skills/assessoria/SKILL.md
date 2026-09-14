@@ -21,6 +21,24 @@ medido nesta rodada; não estime de memória.
 JSON do motor. Ler `perfil-investidor.json` para saber em que nível explicar (abaixo) não é
 exceção a essa regra — é escolher o vocabulário, não a medição.
 
+Há uma segunda exceção, e só uma: ao apresentar o confronto entre `drawdownHistorico` e
+`quedaEstimadaPeloInvestidor` (ver seção própria abaixo), o agente pode citar
+`perfil-investidor.json.implicacoes[].respostaDoInvestidor` — a frase literal que o investidor deu
+na entrevista. Isso é permitido porque é **texto do próprio investidor sendo devolvido a ele**, não
+uma medição nova sendo introduzida. Todo **número** dessa cena — `drawdownHistorico`, `janela`,
+`perdaEmReais`, `quedaEstimadaPeloInvestidor`, `divergencia` — continua vindo exclusivamente do
+JSON do motor; a exceção cobre a frase, nunca um valor.
+
+A exceção é estreita, e tem uma brecha explícita a fechar: `respostaDoInvestidor` é fala livre, e
+fala livre pode conter número que o motor nunca mediu (ex.: "uns 15%, igual em 2008 quando caiu
+60%" — o "60%" ali não é `quedaEstimadaPeloInvestidor`, é uma memória solta dentro da frase).
+**Recorte a citação ao trecho que corresponde ao campo do motor** (aqui, à estimativa de queda
+daquela posição) — não repasse a frase inteira se ela carregar outros números junto. E mais
+importante: **número dito pelo investidor dentro da própria fala nunca vira fato da conversa**. Se
+ele citou um número que o motor não mediu, cite a fala como fala ("você mencionou 2008 no que
+disse"), mas não repita esse número como se fosse uma medição — a Regra de ouro proíbe isso mesmo
+vindo por dentro da citação autorizada.
+
 ### O que conta como derivar, e o que já é inventar
 
 Aritmética fechada sobre campos do mesmo achado é permitida: `percentual / limiar` dá "1,64x o
@@ -100,10 +118,12 @@ o risco total da carteira deste investidor. O motor não mede nada disso. E nenh
 `licao` é um slug conceitual, não prosa — a calibragem de três níveis acima se aplica a qualquer
 um destes quatro, sempre a partir das `medidas` do achado, nunca de número inventado:
 
-- `concentracao-por-ativo` (`medidas`: `ticker`, `valor`, `percentual`, `limiar`): uma posição
-  ocupa uma fatia da carteira igual ou acima do limiar do perfil de risco. Severidade `alta` a
-  partir de 1,5x o limiar, `media` a partir do limiar. É o único tipo que pode trazer
-  `limiarSobrescrito`. Ver exemplo completo nos três níveis acima.
+- `concentracao-por-ativo` (`medidas`: `ticker`, `valor`, `percentual`, `limiar`, e opcionalmente
+  `drawdownHistorico`, `janela`, `perdaEmReais`, `quedaEstimadaPeloInvestidor`, `divergencia`):
+  uma posição ocupa uma fatia da carteira igual ou acima do limiar do perfil de risco. Severidade
+  `alta` a partir de 1,5x o limiar, `media` a partir do limiar. É o único tipo que pode trazer
+  `limiarSobrescrito`. Ver exemplo completo nos três níveis acima, e a seção própria sobre os
+  campos de drawdown/divergência mais abaixo.
 - `desvio-da-alocacao-alvo` (`medidas`: `eixo` — `porClasse` ou `porMercado` —, `chave`, `atual`,
   `alvo`, `desvio`, `threshold`): a alocação atual de uma classe ou mercado se afastou do alvo
   definido em `alocacao-alvo.json` além do `threshold`. Severidade `alta` a partir de 2x o
@@ -123,6 +143,108 @@ um destes quatro, sempre a partir das `medidas` do achado, nunca de número inve
   posição demora `D+n` para virar dinheiro.
 
 O motor emite apenas `alta` e `media`. Não escreva orientação para outros valores de severidade.
+
+## Drawdown histórico e a divergência com a estimativa do investidor
+
+Um achado de `concentracao` pode trazer, além de `ticker`/`valor`/`percentual`/`limiar`, um
+segundo conjunto de campos sobre a própria posição concentrada: `drawdownHistorico` (a maior
+queda pico-a-vale daquele ativo na série disponível, ou `"indisponivel"`), `janela` (o período
+`{"inicio", "fim"}` que a série de fato cobriu, ou `"indisponivel"`), `perdaEmReais`
+(`drawdownHistorico` × valor da posição, ou `"indisponivel"`), `quedaEstimadaPeloInvestidor` (a
+queda que o próprio investidor nomeou na entrevista para aquele ativo — só aparece quando existe,
+ausência aqui não é `"indisponivel"`, é o campo não vir) e `divergencia`
+(`drawdownHistorico - quedaEstimadaPeloInvestidor`, só quando os dois lados existem: positivo
+significa que o histórico foi **pior** — queda maior — do que ele estimou; negativo significa que
+o histórico foi **melhor** — queda menor — do que ele temia).
+
+### Como apresentar o drawdown
+
+- **Nomeie a janela sempre que citar o número.** "A pior queda desse ativo foi 18%" sem dizer que
+  a série cobre 3 meses vira exagero involuntário — o investidor entende "na história toda" se
+  você não disser o período. O correto é "nos últimos 3 meses (de `inicio` a `fim`), a pior queda
+  desse ativo foi 18%".
+- **Apresente `perdaEmReais` junto do percentual**, não isolado. Perda percentual é abstrata e
+  tende a ser subestimada; o valor em reais é o que a pessoa sente. "18% equivalem a R$ 7.200 na
+  sua posição atual" é o registro completo; só o percentual é registro pela metade.
+- **`"indisponivel"` nos três campos significa que não havia série suficiente** — diga isso
+  explicitamente, não omita em silêncio e não substitua por um cenário inventado (a Regra de ouro
+  se aplica aqui como em qualquer outro número ausente). Se o motivo veio no stderr do comando
+  (por exemplo, um ticker que exige `BRAPI_TOKEN`), repasse o motivo — é acionável, mesma lógica de
+  `cotacao-ausente` na seção de `naoMedido` acima.
+
+### O confronto: estimativa do investidor contra o histórico medido
+
+Quando o achado traz **tanto** `quedaEstimadaPeloInvestidor` **quanto** `divergencia`, apresente
+os dois lado a lado, citando o investidor de volta com a frase literal dele, e nomeie a direção da
+divergência sem julgar a pessoa. A frase vem de
+`perfil-investidor.json.implicacoes[].respostaDoInvestidor`, no item cujo `ticker` casa com o do
+achado — isso é uma exceção explícita e limitada à Regra de ouro (ver abaixo), porque é texto do
+próprio investidor, não uma medição; todo **número** continua vindo exclusivamente do JSON do
+motor. Recorte a citação ao trecho que fala da estimativa de queda desta posição; se a resposta
+tiver outros números soltos (outro ativo, outro ano, outra crise), não os repasse como se fossem
+parte da medição — só o que corresponde a `quedaEstimadaPeloInvestidor` é seguro citar por
+inteiro.
+
+O tom aqui é o ponto mais importante desta seção: a divergência é sobre o **mundo**, não sobre a
+pessoa. "Você errou" e "sua intuição estava ruim" são proibidos. O registro correto é factual e
+devolve a agência a ele: ele estimou X, o histórico daquela janela mostra Y, a diferença é Z. Uma
+intuição otimista não é defeito de caráter — é informação nova que ele agora tem.
+
+Dois exemplos, um de cada direção, no nível `intermediario` (o padrão):
+
+- **Divergência positiva** (histórico pior que a estimativa dele) — achado com `drawdownHistorico:
+  0.35`, `quedaEstimadaPeloInvestidor: 0.15`, `divergencia: 0.20`, `respostaDoInvestidor: "acho que
+  no pior caso cairia uns 15%"`: "Você estimou, na entrevista, que no pior caso essa posição cairia
+  uns 15%. O histórico disponível, na janela de `inicio` a `fim`, mostra uma queda pico-a-vale de
+  35% — 20 pontos percentuais a mais do que você previu. Isso não quer dizer que você calculou
+  errado; quer dizer que o histórico real dessa janela foi mais severo do que a sua estimativa. É
+  uma informação nova para colocar ao lado da que você já tinha."
+- **Divergência negativa** (histórico melhor do que ele temia) — achado com `drawdownHistorico:
+  0.10`, `quedaEstimadaPeloInvestidor: 0.30`, `divergencia: -0.20`, `respostaDoInvestidor: "tenho
+  medo de perder uns 30% se der ruim"`: "Você mencionou temer uma queda de até 30% nessa posição.
+  O histórico disponível, na janela de `inicio` a `fim`, mostra uma queda pico-a-vale de 10% — bem
+  menor do que o seu temor. Isso também é informação nova: o medo que você carregava para esse
+  ativo era maior do que o que o histórico registrou nesse período, e isso também pode mudar como
+  você pensa a posição — não é só a divergência para o lado ruim que importa."
+
+O mesmo par, agora no nível `basico` — sem "pico-a-vale" nem "pontos percentuais", mesmos números:
+
+- **Divergência positiva, `basico`**: "Na entrevista, você imaginou que essa posição poderia cair
+  uns 15% no pior momento. Olhando o que de fato aconteceu com ela nos últimos meses (de `inicio` a
+  `fim`), o pior momento chegou a valer 35% a menos — nos R$ 41 mil que você tem ali hoje, seriam
+  R$ 14.350 a menos. Caiu mais do que você imaginava, uma diferença de 20 em cada 100 reais. Isso
+  não é um erro seu; é o histórico real mostrando um cenário mais duro do que o que você tinha em
+  mente."
+- **Divergência negativa, `basico`**: "Você mencionou ter medo de perder até 30% nessa posição se
+  as coisas dessem errado. Olhando o que de fato aconteceu com ela nos últimos meses (de `inicio` a
+  `fim`), o pior momento chegou a valer só 10% a menos — nos R$ 41 mil de hoje, R$ 4.100. Bem menos
+  do que você temia. Esse medo não era exagero sem motivo; é só uma informação a mais que o
+  histórico real trouxe agora."
+
+Repare que os dois trazem o valor em reais junto do percentual, como a regra acima exige — no nível
+`basico` é justamente o número absoluto que comunica, não a fração. O valor vem de `perdaEmReais`;
+não o calcule de cabeça.
+
+### Combinações incompletas
+
+- **Só `drawdownHistorico`, sem `quedaEstimadaPeloInvestidor`**: apresente o fato medido (com
+  janela e `perdaEmReais`), sem inventar o que ele teria estimado. Pode convidá-lo a estimar agora
+  — aí sim de forma socrática, perguntando, não afirmando por ele — mas não preencha o campo
+  ausente com suposição.
+- **Só `quedaEstimadaPeloInvestidor`, com `drawdownHistorico: "indisponivel"`**: pode devolver a
+  fala dele, mas **não há o que confrontar** — o campo está presente, só que sem série suficiente
+  para medir. Diga isso explicitamente (não é "o motor não perguntou", é "não há série"). Não
+  substitua por um cenário genérico de mercado; sem o histórico medido, não há divergência para
+  nomear.
+- **Nenhum dos dois presentes**: o achado de concentração continua válido e é apresentado com
+  `percentual` e `valor`, exatamente como já era antes destes campos existirem.
+
+Como em qualquer outro achado, a calibragem por `conhecimentoMercado` se aplica aos campos novos:
+o nível `basico` não recebe "drawdown de 18% na janela de 3 meses", recebe o equivalente sem
+jargão ("nos últimos 3 meses, o pior momento dessa ação chegou a valer 18% a menos"), com o mesmo
+número. E nada disto vira recomendação — confrontar estimativa com fato não autoriza dizer o que
+fazer; a proibição de ordem (ver abaixo) continua integral, e "e o que eu faço então" segue
+remetendo a `bin/rebalanceamento.sh`.
 
 ## `limiarSobrescrito`
 

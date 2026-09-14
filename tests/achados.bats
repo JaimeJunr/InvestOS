@@ -3,6 +3,8 @@
 # liquidez) e a chave "naoMedido" que reporta quando um tipo nao pode ser
 # calculado na rodada.
 
+bats_require_minimum_version 1.5.0
+
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   SCRIPT="$ROOT/bin/achados.sh"
@@ -82,7 +84,7 @@ PY
   ]'
   write_prices '{"A": 3000, "B": 3000, "C": 4000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -113,7 +115,7 @@ for a in achados:
   ]'
   write_prices '{"A": 2500, "B": 2500, "C": 2500, "D": 2500}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -141,7 +143,7 @@ for a in achados:
   # LOW = 2000 (20%, abaixo do limiar); REST fecha o total, tambem abaixo.
   write_prices '{"LOW": 2000, "AT": 2500, "HIGH": 3750, "REST": 1750}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -170,7 +172,7 @@ assert achados["HIGH"]["severidade"] == "alta", achados["HIGH"]
   write_prices '{"X": 6000, "Y": 4000}'
   write_perfil acme '{"perfilRisco": "arrojado"}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -191,7 +193,7 @@ assert achado_x["severidade"] == "alta", achado_x
   write_prices '{"X": 4500, "Y": 5500}'
 
   write_perfil acme '{"perfilRisco": "conservador"}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -202,7 +204,7 @@ assert achado_x["severidade"] == "alta", achado_x
   [ "$status" -eq 0 ]
 
   write_perfil acme '{"perfilRisco": "arrojado"}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -221,7 +223,7 @@ assert achado_x["severidade"] == "media", achado_x
   ]'
   write_prices '{"X": 3000, "Y": 7000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -243,7 +245,7 @@ assert "limiarSobrescrito" not in achado_x, achado_x
   write_prices '{"X": 2000, "Y": 8000}'
   write_perfil acme '{"limiares": {"concentracao": 0.1}}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -262,6 +264,9 @@ assert achado_x["severidade"] == "alta", achado_x
   write_prices '{"X": 1000}'
   write_perfil acme '{"limiares": {"concentracao": 1.5}}'
 
+  # Erro de validacao de achados-report.py (die) acontece antes de qualquer
+  # busca de serie historica - nao ha corrupcao de stdout a separar aqui,
+  # entao mantem "run" combinado (mais simples de afirmar).
   run "$SCRIPT" acme
   [ "$status" -ne 0 ]
   [[ "$output" == *"1.5"* ]]
@@ -306,7 +311,7 @@ assert achado_x["severidade"] == "alta", achado_x
   # nao inventa o percentual, reporta naoMedido em vez de medir errado.
   write_prices '{"Y": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
 }
@@ -319,7 +324,7 @@ assert achado_x["severidade"] == "alta", achado_x
   ]'
   write_prices '{"Y": 7000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -341,7 +346,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   export ALOCACAO_QUOTE_NULL_TICKER="X"
   write_prices '{"Y": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ -n "$output" ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
@@ -360,7 +365,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   export ALOCACAO_QUOTE_BAD_TYPE_TICKER="X"
   write_prices '{"Y": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ -n "$output" ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
@@ -376,7 +381,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   export ALOCACAO_QUOTE_MISSING_KEY_TICKER="X"
   write_prices '{"Y": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ -n "$output" ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
@@ -390,12 +395,12 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   ]'
   write_prices '{"X": 0, "Y": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
 
   write_prices '{"X": -100, "Y": 5000}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["X"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
 }
@@ -409,7 +414,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   # pra US neste repo - so BR tem fallback via brapi-quote.sh).
   unset ALOCACAO_QUOTE
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "provider-nao-configurado", "tickers": ["AAPL"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
 }
@@ -425,9 +430,110 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   # configuracao ausente.
   write_prices '{"MSFT": 5000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "concentracao", "motivo": "cotacao-ausente", "tickers": ["AAPL"]}, {"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
+}
+
+# --- concentracao: drawdownHistorico/janela/perdaEmReais (US-003) -----------
+
+@test "concentracao ganha drawdownHistorico/janela/perdaEmReais medidos da serie real do ticker" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"},
+    {"ticker": "Y", "quantidade": 1, "classe": "acoes", "mercado": "br"}
+  ]'
+  write_prices '{"X": 8000, "Y": 2000}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  python3 - "$RISCO_HISTORY_SERIES" <<'PY'
+import json, sys
+payload = {
+    "X": [
+        {"date": "2026-01-02", "close": 100},
+        {"date": "2026-01-05", "close": 110},
+        {"date": "2026-01-06", "close": 100},
+        {"date": "2026-01-07", "close": 90},
+        {"date": "2026-01-08", "close": 100},
+    ]
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achado_x = next(a for a in report["achados"] if a["medidas"]["ticker"] == "X")
+medidas = achado_x["medidas"]
+assert abs(medidas["drawdownHistorico"] - 0.18181818181818182) < 1e-9, medidas
+assert medidas["janela"] == {"inicio": "2026-01-02", "fim": "2026-01-08"}, medidas
+assert abs(medidas["perdaEmReais"] - 8000 * 0.18181818181818182) < 1e-6, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+  grep -q '^acme X br$' "$RISCO_HISTORY_LOG"
+  # Y nao passou do limiar (20% < 25%) - nao gerou achado de concentracao,
+  # entao nao deve ter serie buscada por ele (evita custo de serie inutil).
+  ! grep -q '^acme Y br$' "$RISCO_HISTORY_LOG"
+}
+
+@test "concentracao com serie historica curta demais: drawdownHistorico/janela/perdaEmReais saem indisponivel, achado continua saindo" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  python3 - "$RISCO_HISTORY_SERIES" <<'PY'
+import json, sys
+payload = {"X": [{"date": "2026-01-08", "close": 100}]}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achado_x = next(a for a in report["achados"] if a["medidas"]["ticker"] == "X")
+medidas = achado_x["medidas"]
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert medidas["janela"] == "indisponivel", medidas
+assert medidas["perdaEmReais"] == "indisponivel", medidas
+assert medidas["valor"] == 1000, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao com ticker ausente da serie historica: drawdownHistorico/janela/perdaEmReais saem indisponivel" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  # Serie existe mas nao cobre o ticker X - fake-risco-history.sh devolve [].
+  printf '%s\n' '{}' > "$RISCO_HISTORY_SERIES"
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achado_x = next(a for a in report["achados"] if a["medidas"]["ticker"] == "X")
+medidas = achado_x["medidas"]
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert medidas["janela"] == "indisponivel", medidas
+assert medidas["perdaEmReais"] == "indisponivel", medidas
+' "$output"
+  [ "$status" -eq 0 ]
 }
 
 @test "carteira totalmente precificada e sem achados: achados e naoMedido saem [] simultaneamente" {
@@ -447,7 +553,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   ]'
   write_prices '{"X": 2000, "Y": 2000, "Z": 2000, "W": 2000, "V": 2000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   [ "$output" = '{"achados": [], "naoMedido": [{"tipo": "desvio", "motivo": "alvo-ausente"}]}' ]
 }
@@ -463,7 +569,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "concentracao"], repo
   write_prices '{"A": 9000, "B": 1000}'
   write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -488,7 +594,7 @@ assert acoes["licao"] == "desvio-da-alocacao-alvo", acoes
   write_prices '{"A": 5100, "B": 4900}'
   write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -509,7 +615,7 @@ assert not [n for n in report["naoMedido"] if n["tipo"] == "desvio"], report
   # continua saindo normalmente mesmo com "desvio" em naoMedido.
   write_prices '{"A": 6000, "B": 4000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -531,7 +637,7 @@ assert len(concentracao) == 2, report
   write_prices '{"Y": 5000}'
   write_alvo acme '{"porClasse": {"acoes": 1}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -559,7 +665,7 @@ assert desvio_nao_medido["tickers"] == ["X"], desvio_nao_medido
 
   # abaixo do threshold: 52/48 (desvio 0.02).
   write_prices '{"A": 5200, "B": 4800}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -570,7 +676,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "desvio"], report
 
   # exatamente no threshold (0.05 de desvio): 55/45 -> media.
   write_prices '{"A": 5500, "B": 4500}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -582,7 +688,7 @@ assert acoes["severidade"] == "media", acoes
 
   # exatamente em 2x o threshold (0.10 de desvio): 60/40 -> alta.
   write_prices '{"A": 6000, "B": 4000}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -606,7 +712,7 @@ assert acoes["severidade"] == "alta", acoes
 
   # total = 8000; abaixo do threshold (0.05 de desvio): 4400/3600.
   write_prices '{"A": 4400, "B": 3600}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -618,7 +724,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "desvio"], report
   # exatamente no threshold (0.125 de desvio): 5000/3000 (62,5%/37,5%) ->
   # media (AC6: dispara NO ponto, mesma semantica de boundary do "concentracao").
   write_prices '{"A": 5000, "B": 3000}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -630,7 +736,7 @@ assert acoes["severidade"] == "media", acoes
 
   # exatamente em 2x o threshold (0.25 de desvio): 6000/2000 (75%/25%) -> alta.
   write_prices '{"A": 6000, "B": 2000}'
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -654,7 +760,7 @@ assert acoes["severidade"] == "alta", acoes
   write_prices '{"A": 9000, "B": 1000}'
   write_alvo acme '{"porClasse": {"acoes": 1}, "porMercado": {"br": 0.5, "us": 0.5}, "threshold": 0.05}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -676,7 +782,7 @@ assert abs(br["medidas"]["alvo"] - 0.5) < 1e-9, br
   write_prices '{"A": 1000}'
   write_perfil acme '{"reservaEmergenciaOk": false}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -694,7 +800,7 @@ assert achado["licao"] == "reserva-emergencia-ausente", achado
   write_prices '{"A": 1000}'
   write_perfil acme '{"reservaEmergenciaOk": true}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -709,7 +815,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "reserva"], report
   write_holdings acme '[{"ticker": "A", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
   write_prices '{"A": 1000}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -728,7 +834,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "reserva"], report
   write_prices '{"Y": 5000}'
   write_perfil acme '{"reservaEmergenciaOk": false}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -750,7 +856,7 @@ assert achado["severidade"] == "alta", achado
   write_prices '{"A": 1000}'
   write_perfil acme '{"objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -772,7 +878,7 @@ assert achado["licao"] == "liquidez-descasada-do-prazo", achado
   write_prices '{"A": 1000}'
   write_perfil acme '{"objetivos": [{"nome": "aposentadoria", "prazo": "longo"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -790,7 +896,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "liquidez"], report
   write_prices '{"A": 1000}'
   write_perfil acme '{"objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -808,7 +914,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "liquidez"], report
   write_prices '{"A": 1000}'
   write_perfil acme '{"objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -827,7 +933,7 @@ assert not [a for a in report["achados"] if a["tipo"] == "liquidez"], report
   write_prices '{"Y": 5000}'
   write_perfil acme '{"objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   run python3 -c '
 import json, sys
@@ -851,7 +957,7 @@ assert achado["medidas"]["ticker"] == "X", achado
   write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
   write_perfil acme '{"reservaEmergenciaOk": false, "objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
 
-  run "$SCRIPT" acme
+  run --separate-stderr "$SCRIPT" acme
   [ "$status" -eq 0 ]
   # Captura o relatorio ANTES de qualquer run aninhado - "run python3 -c"
   # abaixo sobrescreve $output com o stdout do proprio python (vazio), entao
@@ -874,4 +980,423 @@ assert "liquidez" in tipos, report
   lowered="$(echo "$report" | tr "[:upper:]" "[:lower:]")"
   [[ "$lowered" != *"compr"* ]]
   [[ "$lowered" != *"vend"* ]]
+}
+
+# --- stderr do provider de serie historica nao pode ser engolido -----------
+
+@test "serie historica de ticker nao-gratuito sem BRAPI_TOKEN: stdout continua JSON puro, stderr mostra o motivo, achado sai com indisponivel" {
+  seed_portfolio acme
+  # BBAS3 nao esta em FREE_TICKERS (bin/brapi-quote.sh) e acme/.env esta
+  # vazio (sem BRAPI_TOKEN) - dispara o guard de "Ticker nao-gratuito" antes
+  # de qualquer chamada de rede. Sozinho na carteira, BBAS3 fica em 100% e
+  # sempre passa do limiar de concentracao (default moderado 25%).
+  write_holdings acme '[{"ticker": "BBAS3", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"BBAS3": 1000}'
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  # Captura $stderr ANTES do "run python3" aninhado abaixo - "run" sem
+  # --separate-stderr sobrescreve $stderr (do proprio python, vazio), entao
+  # a assercao (b) feita depois dele testaria a variavel errada.
+  err="$stderr"
+  # (a) stdout e JSON valido - nunca corrompido pela mensagem de erro do provider.
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achado = next(a for a in report["achados"] if a["tipo"] == "concentracao")
+medidas = achado["medidas"]
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert medidas["janela"] == "indisponivel", medidas
+assert medidas["perdaEmReais"] == "indisponivel", medidas
+' "$output"
+  [ "$status" -eq 0 ]
+  # (b) stderr carrega a pista acionavel que o investidor precisa pra resolver.
+  [[ "$err" == *"Ticker nao-gratuito"* ]]
+  [[ "$err" == *"BBAS3"* ]]
+  [[ "$err" == *"BRAPI_TOKEN"* ]]
+}
+
+# --- RISCO_HISTORY injetado (US/global) falhando nao pode matar o relatorio
+# inteiro (AC4) - fake-risco-history-fail.sh simula os tres modos possiveis
+# de falha do provider injetado direto por history_payload (sem a guarda
+# interna que cvm_series/brapi_series tem). Carteira reaproveita a mesma que
+# dispara os 4 tipos simultaneamente ("multiplos tipos disparam juntos"),
+# pra provar que concentracao/desvio/reserva/liquidez sobrevivem inteiros
+# mesmo com o enriquecimento de serie falhando.
+
+assert_relatorio_completo_apesar_da_falha_de_serie() {
+  [ "$status" -eq 0 ]
+  err="$stderr"
+  report="$output"
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+tipos = {a["tipo"] for a in report["achados"]}
+assert "concentracao" in tipos, report
+assert "desvio" in tipos, report
+assert "reserva" in tipos, report
+assert "liquidez" in tipos, report
+concentracao = next(a for a in report["achados"] if a["tipo"] == "concentracao")
+medidas = concentracao["medidas"]
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert medidas["janela"] == "indisponivel", medidas
+assert medidas["perdaEmReais"] == "indisponivel", medidas
+' "$report"
+  [ "$status" -eq 0 ]
+  [[ "$err" == *"fake-risco-history-fail"* ]]
+}
+
+@test "RISCO_HISTORY falha com exit!=0 e stdout vazio: relatorio sai completo, serie indisponivel, exit 0, motivo no stderr" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "A", "quantidade": 1, "classe": "acoes", "mercado": "br", "liquidez": "D+30"},
+    {"ticker": "B", "quantidade": 1, "classe": "renda-fixa", "mercado": "br"}
+  ]'
+  write_prices '{"A": 9000, "B": 1000}'
+  write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
+  write_perfil acme '{"reservaEmergenciaOk": false, "objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="exit1"
+
+  run --separate-stderr "$SCRIPT" acme
+  assert_relatorio_completo_apesar_da_falha_de_serie
+}
+
+@test "RISCO_HISTORY falha com stdout nao-JSON e exit 0: relatorio sai completo, serie indisponivel, exit 0, motivo no stderr" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "A", "quantidade": 1, "classe": "acoes", "mercado": "br", "liquidez": "D+30"},
+    {"ticker": "B", "quantidade": 1, "classe": "renda-fixa", "mercado": "br"}
+  ]'
+  write_prices '{"A": 9000, "B": 1000}'
+  write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
+  write_perfil acme '{"reservaEmergenciaOk": false, "objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="nonjson"
+
+  run --separate-stderr "$SCRIPT" acme
+  assert_relatorio_completo_apesar_da_falha_de_serie
+}
+
+@test "RISCO_HISTORY falha com stdout vazio e exit 0: relatorio sai completo, serie indisponivel, exit 0, motivo no stderr" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "A", "quantidade": 1, "classe": "acoes", "mercado": "br", "liquidez": "D+30"},
+    {"ticker": "B", "quantidade": 1, "classe": "renda-fixa", "mercado": "br"}
+  ]'
+  write_prices '{"A": 9000, "B": 1000}'
+  write_alvo acme '{"porClasse": {"acoes": 0.5, "renda-fixa": 0.5}, "porMercado": {"br": 1, "us": 0}, "threshold": 0.05}'
+  write_perfil acme '{"reservaEmergenciaOk": false, "objetivos": [{"nome": "reforma", "prazo": "curto"}]}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="empty"
+
+  run --separate-stderr "$SCRIPT" acme
+  assert_relatorio_completo_apesar_da_falha_de_serie
+}
+
+# --- concentracao: confronto estimativa do investidor x drawdown medido (US-006) ---
+
+write_perfil_com_implicacao() {
+  local slug="$1" ticker="$2" queda="$3" data="$4"
+  python3 - "$slug" "$ticker" "$queda" "$data" <<'PY'
+import json, sys
+slug, ticker, queda, data = sys.argv[1:5]
+payload = {
+    "implicacoes": [
+        {
+            "pergunta": "pergunta de teste",
+            "respostaDoInvestidor": "resposta de teste",
+            "quedaEstimadaPeloInvestidor": None if queda == "null" else float(queda),
+            "ticker": None if ticker == "null" else ticker,
+            "data": data,
+        }
+    ]
+}
+with open(f"{slug}/perfil-investidor.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+}
+
+@test "concentracao: quedaEstimadaPeloInvestidor e drawdownHistorico presentes para o mesmo ticker - achado traz os dois lado a lado mais divergencia" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  write_perfil_com_implicacao acme X 0.5 2026-08-30
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  python3 - "$RISCO_HISTORY_SERIES" <<'PY'
+import json, sys
+payload = {
+    "X": [
+        {"date": "2026-01-02", "close": 100},
+        {"date": "2026-01-05", "close": 110},
+        {"date": "2026-01-06", "close": 100},
+        {"date": "2026-01-07", "close": 90},
+        {"date": "2026-01-08", "close": 100},
+    ]
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+drawdown = 0.18181818181818182
+assert abs(medidas["drawdownHistorico"] - drawdown) < 1e-9, medidas
+assert medidas["quedaEstimadaPeloInvestidor"] == 0.5, medidas
+assert abs(medidas["divergencia"] - (drawdown - 0.5)) < 1e-9, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: so drawdownHistorico presente (sem implicacao pro ticker) - so esse lado aparece, sem divergencia" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  python3 - "$RISCO_HISTORY_SERIES" <<'PY'
+import json, sys
+payload = {
+    "X": [
+        {"date": "2026-01-02", "close": 100},
+        {"date": "2026-01-05", "close": 110},
+        {"date": "2026-01-06", "close": 100},
+        {"date": "2026-01-07", "close": 90},
+        {"date": "2026-01-08", "close": 100},
+    ]
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+assert abs(medidas["drawdownHistorico"] - 0.18181818181818182) < 1e-9, medidas
+assert "quedaEstimadaPeloInvestidor" not in medidas, medidas
+assert "divergencia" not in medidas, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: so quedaEstimadaPeloInvestidor presente (serie historica insuficiente) - so esse lado aparece, sem divergencia" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  write_perfil_com_implicacao acme X 0.5 2026-08-30
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history.sh"
+  export RISCO_HISTORY_SERIES="$WORKDIR/series.json"
+  export RISCO_HISTORY_LOG="$WORKDIR/history.log"
+  : > "$RISCO_HISTORY_LOG"
+  printf '%s\n' '{}' > "$RISCO_HISTORY_SERIES"
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert medidas["quedaEstimadaPeloInvestidor"] == 0.5, medidas
+assert "divergencia" not in medidas, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: nenhum dos dois presente - achado sai normal com percentual e valor, sem os campos de confronto" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+assert medidas["percentual"] == 1.0, medidas
+assert medidas["valor"] == 1000, medidas
+assert medidas["drawdownHistorico"] == "indisponivel", medidas
+assert "quedaEstimadaPeloInvestidor" not in medidas, medidas
+assert "divergencia" not in medidas, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: implicacao com ticker null e implicacao sem campo ticker nao casam com nenhum achado" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  # Uma implicacao sobre a carteira como um todo (ticker null) e uma gravada
+  # antes do campo "ticker" existir (campo ausente) - nenhuma das duas pode
+  # ser aplicada globalmente ao unico achado de concentracao desta carteira.
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "implicacoes": [
+        {
+            "pergunta": "se a carteira toda caisse pela metade?",
+            "respostaDoInvestidor": "doeria mas eu seguraria",
+            "quedaEstimadaPeloInvestidor": 0.5,
+            "ticker": None,
+            "data": "2026-08-30",
+        },
+        {
+            "pergunta": "implicacao legada sem o campo ticker",
+            "respostaDoInvestidor": "resposta legada",
+            "quedaEstimadaPeloInvestidor": 0.4,
+            "data": "2026-08-29",
+        },
+    ]
+}
+with open(f"{slug}/perfil-investidor.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+assert "quedaEstimadaPeloInvestidor" not in medidas, medidas
+assert "divergencia" not in medidas, medidas
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: dois tickers concentrados ao mesmo tempo, estimativa registrada so em um - o valor nao vaza pro outro" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"},
+    {"ticker": "Y", "quantidade": 1, "classe": "acoes", "mercado": "br"}
+  ]'
+  # 50%/50% - ambos acima do limiar moderado default (25%).
+  write_prices '{"X": 5000, "Y": 5000}'
+  # So X tem implicacao gravada; Y nao tem nenhuma. Guarda contra um casamento
+  # por POSICAO no array de achados (em vez de por "ticker") - com so uma
+  # estimativa no dict, um casamento posicional aplicaria (ou vazaria) o
+  # mesmo valor pro achado de Y so por ele vir depois de X.
+  write_perfil_com_implicacao acme X 0.5 2026-08-30
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achados = {a["medidas"]["ticker"]: a["medidas"] for a in report["achados"] if a["tipo"] == "concentracao"}
+assert achados["X"]["quedaEstimadaPeloInvestidor"] == 0.5, achados["X"]
+assert "quedaEstimadaPeloInvestidor" not in achados["Y"], achados["Y"]
+assert "divergencia" not in achados["Y"], achados["Y"]
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: dois tickers concentrados com estimativas gravadas em ordem trocada - cada achado casa com a sua, nao com a do vizinho" {
+  seed_portfolio acme
+  write_holdings acme '[
+    {"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"},
+    {"ticker": "Y", "quantidade": 1, "classe": "acoes", "mercado": "br"}
+  ]'
+  # 50%/50% - ambos acima do limiar moderado default (25%). achados saem
+  # ordenados por ticker (X, Y - ver find_concentracao). A implicacao de Y e
+  # gravada ANTES da de X, entao um casamento por POSICAO (ex.: zipar
+  # estimativas.values() na ordem de insercao com os achados em ordem
+  # alfabetica) trocaria os valores entre X e Y.
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "implicacoes": [
+        {
+            "pergunta": "queda pra Y",
+            "respostaDoInvestidor": "resposta Y",
+            "quedaEstimadaPeloInvestidor": 0.9,
+            "ticker": "Y",
+            "data": "2026-08-30",
+        },
+        {
+            "pergunta": "queda pra X",
+            "respostaDoInvestidor": "resposta X",
+            "quedaEstimadaPeloInvestidor": 0.5,
+            "ticker": "X",
+            "data": "2026-08-30",
+        },
+    ]
+}
+with open(f"{slug}/perfil-investidor.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  write_prices '{"X": 5000, "Y": 5000}'
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+achados = {a["medidas"]["ticker"]: a["medidas"] for a in report["achados"] if a["tipo"] == "concentracao"}
+assert achados["X"]["quedaEstimadaPeloInvestidor"] == 0.5, achados["X"]
+assert achados["Y"]["quedaEstimadaPeloInvestidor"] == 0.9, achados["Y"]
+' "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "concentracao: tres implicacoes do mesmo ticker fora de ordem no array, uma com queda null - vence a mais recente entre as nao-nulas" {
+  seed_portfolio acme
+  write_holdings acme '[{"ticker": "X", "quantidade": 1, "classe": "acoes", "mercado": "br"}]'
+  write_prices '{"X": 1000}'
+  python3 - acme <<'PY'
+import json, sys
+slug = sys.argv[1]
+payload = {
+    "implicacoes": [
+        {
+            "pergunta": "primeira pergunta",
+            "respostaDoInvestidor": "resposta antiga",
+            "quedaEstimadaPeloInvestidor": 0.3,
+            "ticker": "X",
+            "data": "2026-05-01",
+        },
+        {
+            "pergunta": "pergunta mais recente, sem posicao concreta",
+            "respostaDoInvestidor": "nao sei quantificar",
+            "quedaEstimadaPeloInvestidor": None,
+            "ticker": "X",
+            "data": "2026-08-30",
+        },
+        {
+            "pergunta": "segunda pergunta, a mais recente com estimativa numerica",
+            "respostaDoInvestidor": "resposta atualizada",
+            "quedaEstimadaPeloInvestidor": 0.6,
+            "ticker": "X",
+            "data": "2026-06-15",
+        },
+    ]
+}
+with open(f"{slug}/perfil-investidor.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import json, sys
+report = json.loads(sys.argv[1])
+medidas = next(a for a in report["achados"] if a["tipo"] == "concentracao")["medidas"]
+assert medidas["quedaEstimadaPeloInvestidor"] == 0.6, medidas
+' "$output"
+  [ "$status" -eq 0 ]
 }

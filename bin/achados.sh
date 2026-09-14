@@ -43,6 +43,16 @@ Tipo "liquidez" dispara alta quando ha objetivo de prazo "curto" em
 perfil-investidor.json.objetivos[] e alguma posicao com liquidez D+<n>, n > 1.
 "reserva" e "liquidez" nao dependem do total da carteira - saem mesmo quando
 concentracao/desvio caem em naoMedido por falta de cotacao.
+
+Cada achado de "concentracao" ganha tambem drawdownHistorico (maior queda
+pico-a-vale ja registrada NAQUELE ticker), janela (periodo que a serie de
+fato cobriu) e perdaEmReais (valor da posicao x drawdown) em "medidas". Serie
+via RISCO_HISTORY injetado (mesmo override de risco.sh) ou fallback BR
+(brapi-quote.sh/cvm-informe.sh). Serie insuficiente ou ticker ausente dela
+faz os tres campos sairem "indisponivel" - nunca um cenario fixo, e o achado
+continua saindo normalmente (isso e diferente de falta de COTACAO, que tira
+o tipo "concentracao" inteiro pra naoMedido - ver comentario acima). So busca
+serie do(s) ticker(s) que de fato geraram achado de concentracao.
 EOF
 }
 
@@ -55,6 +65,7 @@ require_file() {
 }
 
 source "$SCRIPT_DIR/lib-cotacao.sh"
+source "$SCRIPT_DIR/lib-serie.sh"
 
 collect_quotes() {
   local slug="$1" holdings="$2" dest="$3" sem_provider_dest="$4"
@@ -100,6 +111,41 @@ collect_quotes() {
   printf '%s\n' "$sem_provider" > "$sem_provider_dest"
 }
 
+# Busca serie historica so dos tickers que JA geraram achado de concentracao
+# (descobertos numa primeira passada do achados-report.py sem serie - ver
+# fluxo principal abaixo). Evita o custo de buscar serie de ticker que nunca
+# vira achado.
+collect_concentracao_series() {
+  local slug="$1" holdings="$2" tickers="$3" dest="$4"
+  local ticker mercado payload series
+  series="{}"
+  while IFS= read -r ticker; do
+    [ -n "$ticker" ] || continue
+    mercado=$(jq -r --arg t "$ticker" \
+      '[.posicoes[] | select((.ticker|tostring|ascii_upcase) == $t)][0].mercado // empty' "$holdings" \
+      | tr '[:upper:]' '[:lower:]')
+    # NAO suprimir stderr aqui: falha de fetch ainda vira "indisponivel" nos
+    # tres campos de enriquecimento (AC4, ver enriquecimento_indisponivel),
+    # mas o motivo (ex.: "Ticker nao-gratuito: ... BRAPI_TOKEN no <slug>/.env")
+    # precisa chegar ao stderr do achados.sh - e a unica pista acionavel que o
+    # investidor tem pra resolver. O stdout continua JSON puro quando
+    # history_payload da certo (so imprime o array/objeto de serie em stdout;
+    # a mensagem de erro do provider vai para o stderr dele, canal separado).
+    # Guarda propria (mesma logica de brapi_series/cvm_series): com
+    # RISCO_HISTORY injetado a chamada e direta e sem guarda interna, entao
+    # exit != 0 OU stdout que nao e JSON valido (mensagem de erro por engano
+    # em stdout, resposta vazia, HTML de erro) tem que virar "[]" aqui - senao
+    # `set -e` mata o script inteiro (e descarta o relatorio da 1a passada,
+    # ja pronto em memoria) OU o `--argjson` abaixo quebra com JSON invalido.
+    if ! payload=$(history_payload "$slug" "$ticker" "$mercado") \
+       || ! jq -e . >/dev/null 2>&1 <<<"$payload"; then
+      payload='[]'
+    fi
+    series=$(jq --arg t "$ticker" --argjson s "$payload" '.[$t] = $s' <<<"$series")
+  done <<<"$tickers"
+  printf '%s\n' "$series" > "$dest"
+}
+
 SLUG="${1:-}"
 
 if [ -z "$SLUG" ]; then
@@ -121,7 +167,8 @@ QUOTES=$(mktemp)
 SEM_PROVIDER=$(mktemp)
 PERFIL_INPUT=$(mktemp)
 ALVO_INPUT=$(mktemp)
-trap 'rm -f "$QUOTES" "$SEM_PROVIDER" "$PERFIL_INPUT" "$ALVO_INPUT"' EXIT
+HISTORY_INPUT=$(mktemp)
+trap 'rm -f "$QUOTES" "$SEM_PROVIDER" "$PERFIL_INPUT" "$ALVO_INPUT" "$HISTORY_INPUT"' EXIT
 
 if [ -f "$PERFIL" ]; then
   cat "$PERFIL" > "$PERFIL_INPUT"
@@ -141,4 +188,20 @@ else
 fi
 
 collect_quotes "$SLUG" "$HOLDINGS" "$QUOTES" "$SEM_PROVIDER"
-python3 "$SCRIPT_DIR/achados-report.py" "$HOLDINGS" "$QUOTES" "$PERFIL_INPUT" "$SEM_PROVIDER" "$ALVO_INPUT"
+
+# 1a passada: sem serie historica ainda (arquivo vazio = mesmo sinal de
+# ausencia que ALVO_INPUT vazio) - so serve pra descobrir QUAIS tickers
+# geraram achado de concentracao, pra so entao buscar serie so deles.
+: > "$HISTORY_INPUT"
+REPORT=$(python3 "$SCRIPT_DIR/achados-report.py" "$HOLDINGS" "$QUOTES" "$PERFIL_INPUT" "$SEM_PROVIDER" "$ALVO_INPUT" "$HISTORY_INPUT")
+
+CONCENTRACAO_TICKERS=$(jq -r '[.achados[] | select(.tipo == "concentracao") | .medidas.ticker] | unique | .[]' <<<"$REPORT")
+
+if [ -n "$CONCENTRACAO_TICKERS" ]; then
+  # 2a passada: agora com a serie so dos tickers concentrados, pra enriquecer
+  # "medidas" com drawdownHistorico/janela/perdaEmReais.
+  collect_concentracao_series "$SLUG" "$HOLDINGS" "$CONCENTRACAO_TICKERS" "$HISTORY_INPUT"
+  REPORT=$(python3 "$SCRIPT_DIR/achados-report.py" "$HOLDINGS" "$QUOTES" "$PERFIL_INPUT" "$SEM_PROVIDER" "$ALVO_INPUT" "$HISTORY_INPUT")
+fi
+
+printf '%s\n' "$REPORT"
