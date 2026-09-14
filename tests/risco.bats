@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Testes de pr-US-002: VaR historico, Sharpe e max drawdown a partir do historico.
 
+bats_require_minimum_version 1.5.0
+
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   SCRIPT="$ROOT/bin/risco.sh"
@@ -259,4 +261,69 @@ assert "AAPL" in joined, report
 assert "us" in joined.lower(), report
 ' "$report"
   [ "$status" -eq 0 ]
+}
+
+# US-006: RISCO_HISTORY injetado (caminho US/global) que falha nao pode
+# derrubar o script inteiro com erro cru do jq - tem que cair no aviso de
+# "historico insuficiente" (mesmo caminho que ja existe para serie curta),
+# e o motivo do provider tem que continuar chegando ao stderr.
+@test "RISCO_HISTORY com exit != 0 nao derruba o script e reporta historico insuficiente" {
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="exit1"
+  seed_portfolio acme
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "AAPL", "quantidade": 5, "classe": "acoes", "mercado": "us"},
+        ]
+    }, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"historico insuficiente"* ]]
+  [[ "$output" == *"AAPL"* ]]
+  [[ "$stderr" == *"falha simulada (exit1)"* ]]
+}
+
+@test "RISCO_HISTORY com stdout nao-JSON nao derruba o script e reporta historico insuficiente" {
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="nonjson"
+  seed_portfolio acme
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "AAPL", "quantidade": 5, "classe": "acoes", "mercado": "us"},
+        ]
+    }, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"historico insuficiente"* ]]
+  [[ "$stderr" == *"falha simulada (nonjson)"* ]]
+}
+
+@test "RISCO_HISTORY com stdout vazio nao derruba o script e reporta historico insuficiente" {
+  export RISCO_HISTORY="$ROOT/tests/helpers/fake-risco-history-fail.sh"
+  export RISCO_HISTORY_FAIL_MODE="empty"
+  seed_portfolio acme
+  python3 - <<'PY'
+import json
+with open("acme/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump({
+        "posicoes": [
+            {"ticker": "AAPL", "quantidade": 5, "classe": "acoes", "mercado": "us"},
+        ]
+    }, fh)
+PY
+
+  run --separate-stderr "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"historico insuficiente"* ]]
+  [[ "$stderr" == *"falha simulada (empty)"* ]]
 }

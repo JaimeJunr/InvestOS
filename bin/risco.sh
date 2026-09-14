@@ -32,55 +32,12 @@ require_file() {
   fi
 }
 
-digits_only() {
-  printf '%s' "$1" | tr -cd '0-9'
-}
-
-is_cnpj() {
-  local digits
-  digits=$(digits_only "$1")
-  [ "${#digits}" -eq 14 ]
-}
-
-cvm_series() {
-  local slug="$1" ticker="$2" raw digits
-  digits=$(digits_only "$ticker")
-  if ! raw=$("$REPO_ROOT/bin/cvm-informe.sh" "$slug"); then
-    printf '%s\n' '[]'
-    return
-  fi
-  jq -c --arg d "$digits" \
-    '[.[] | select((.cnpj | gsub("[^0-9]"; "")) == $d) | {date: .dtComptc, close: .vlQuota}] | sort_by(.date)' \
-    <<<"$raw"
-}
-
-brapi_series() {
-  local slug="$1" ticker="$2" raw
-  if ! raw=$(BRAPI_RANGE=3mo BRAPI_INTERVAL=1d "$REPO_ROOT/bin/brapi-quote.sh" "$slug" "$ticker"); then
-    printf '%s\n' '[]'
-    return
-  fi
-  jq -c \
-    '(.results[0].data.historicalDataPrice // []) | map({date: ((.date | todateiso8601)[0:10]), close: (.adjustedClose // .close)}) | sort_by(.date)' \
-    <<<"$raw"
-}
-
-history_payload() {
-  local slug="$1" ticker="$2" mercado="$3"
-  if [ -n "${RISCO_HISTORY:-}" ]; then
-    "$RISCO_HISTORY" "$slug" "$ticker" "$mercado"
-    return
-  fi
-  if [ "$mercado" = "br" ] && is_cnpj "$ticker"; then
-    cvm_series "$slug" "$ticker"
-    return
-  fi
-  if [ "$mercado" = "br" ]; then
-    brapi_series "$slug" "$ticker"
-    return
-  fi
-  printf '%s\n' '[]'
-}
+# cvm_series/brapi_series/history_payload (e digits_only/is_cnpj) foram
+# extraidas para lib-serie.sh: achados.sh (US-003) precisa exatamente das
+# mesmas funcoes pra buscar serie por ticker no enriquecimento de
+# "concentracao", e RISCO_HISTORY e o mesmo override nos dois lugares (o
+# investidor configura um so).
+source "$SCRIPT_DIR/lib-serie.sh"
 
 collect_histories() {
   local slug="$1" holdings="$2" dest="$3"
@@ -94,7 +51,16 @@ collect_histories() {
     if [ -n "$preco_manual" ]; then
       continue
     fi
-    payload=$(history_payload "$slug" "$ticker" "$mercado")
+    # Guarda propria (mesma logica de achados.sh/collect_concentracao_series):
+    # com RISCO_HISTORY injetado a chamada e direta e sem guarda interna, entao
+    # exit != 0 OU stdout que nao e JSON valido tem que virar "[]" aqui - senao
+    # `set -e` mata o script inteiro ou o `--argjson` abaixo quebra com JSON
+    # invalido. NAO suprimir o stderr do provider: e a unica pista acionavel
+    # que o investidor tem pra resolver (ex.: falta BRAPI_TOKEN/chave MCP).
+    if ! payload=$(history_payload "$slug" "$ticker" "$mercado") \
+       || ! jq -e . >/dev/null 2>&1 <<<"$payload"; then
+      payload='[]'
+    fi
     series=$(jq --arg t "$ticker" --argjson s "$payload" '.[$t] = $s' <<<"$series")
   done < <(jq -c '.posicoes[] | {ticker: (.ticker|tostring|ascii_upcase), mercado: (.mercado|ascii_downcase), precoManual: (.precoManual // null)}' "$holdings")
   printf '%s\n' "$series" > "$dest"

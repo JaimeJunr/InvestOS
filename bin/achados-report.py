@@ -10,6 +10,15 @@ Cada tipo de achado vira uma funcao find_<tipo>() que devolve uma lista de
 achados; build_report() so as encadeia. Quatro tipos: concentracao e desvio
 dependem do total da carteira (ticker sem cotacao derruba o tipo inteiro pra
 naoMedido); reserva e liquidez nao dependem do total e sempre rodam.
+
+IMPORTANTE (US-003): falta de COTACAO e falta de SERIE HISTORICA sao coisas
+DIFERENTES, nao confundir. Falta de cotacao torna o total da carteira
+desconhecido -> o tipo "concentracao" inteiro vira naoMedido (ver
+find_concentracao/nao_medido_por_ausencia, comportamento anterior, intocado).
+Falta de SERIE historica (drawdown do ticker) NAO afeta o total nem o
+percentual - a concentracao continua perfeitamente medida sem ela; so o
+enriquecimento (drawdownHistorico/janela/perdaEmReais) fica "indisponivel"
+dentro de "medidas", o achado sai normal (ver enriquecimento_drawdown).
 """
 
 from __future__ import annotations
@@ -51,6 +60,13 @@ SEVERIDADE_ALTA_MULTIPLICADOR = Decimal("1.5")
 # perfil-investidor.json.limiares.desvio (ver find_desvio).
 DESVIO_SEVERIDADE_ALTA_MULTIPLICADOR = Decimal("2.0")
 LIQUIDEZ_PRAZO_CURTO_LIMITE = 1  # n > 1 e descasado; D+0/D+1 sao liquidez imediata.
+# Mesmo minimo de risco-report.py (MIN_PRICES): drawdown de 1-2 pontos e ruido
+# de amostra, nao medida - abaixo disso os campos saem "indisponivel" (AC4),
+# nunca um numero calculado sobre serie curta demais.
+SERIE_MIN_PONTOS = 3
+# String usada nos tres campos de enriquecimento quando a serie e insuficiente
+# ou o ticker esta ausente dela. Nunca um cenario fixo (-30%/-50%) - AC5.
+SERIE_INDISPONIVEL = "indisponivel"
 
 
 def decimal_exato(value: float) -> Decimal:
@@ -182,6 +198,123 @@ def load_alvo(path: str) -> dict[str, Any] | None:
     }
 
 
+def load_history(path: str) -> dict[str, Any]:
+    """Carrega serie historica por ticker (mesmo shape de risco.sh: JSON
+    {"TICKER": [{"date","close"}, ...]}) pra enriquecer "concentracao" com
+    drawdownHistorico/janela/perdaEmReais. Arquivo vazio (0 bytes) = ainda sem
+    serie coletada - bin/achados.sh roda achados-report.py duas vezes: a
+    primeira sem serie (so pra descobrir quais tickers passaram do limiar de
+    concentracao), a segunda com a serie so desses tickers (evita buscar
+    serie de ticker que nao vira achado). Mesmo padrao de load_alvo: arquivo
+    vazio vira ausencia total, nunca cenario inventado."""
+    with open(path, encoding="utf-8") as handle:
+        raw = handle.read()
+    if not raw.strip():
+        return {}
+    expected = 'JSON {"TICKER": [{"date","close"}, ...]}'
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        die(f"Arquivo invalido: recebido JSON invalido em '{path}' ({exc}), esperado {expected}.")
+    if not isinstance(payload, dict):
+        die(f"Historico invalido: recebido {payload!r} em '{path}', esperado {expected}.")
+    return payload
+
+
+def enriquecimento_indisponivel() -> dict[str, Any]:
+    return {
+        "drawdownHistorico": SERIE_INDISPONIVEL,
+        "janela": SERIE_INDISPONIVEL,
+        "perdaEmReais": SERIE_INDISPONIVEL,
+    }
+
+
+def enriquecimento_drawdown(ticker: str, valor_posicao: Decimal, history: dict[str, Any]) -> dict[str, Any]:
+    """AC1-3: pior queda pico-a-vale HISTORICA daquele ticker (nao da
+    carteira agregada - risco-report.py so calcula maxDrawdown agregado), a
+    janela que a serie de fato cobriu e a perda em reais na posicao atual
+    (valor * drawdown). Serie com menos de SERIE_MIN_PONTOS pontos validos,
+    ou ticker ausente dela, vira "indisponivel" nos tres campos (AC4) - nunca
+    um cenario fixo tipo -30%/-50% (AC5)."""
+    rows = history.get(ticker) or history.get(ticker.upper()) or []
+    if not isinstance(rows, list):
+        return enriquecimento_indisponivel()
+    pontos: list[tuple[str, float]] = []
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        day = str(item.get("date") or "").strip()
+        try:
+            close = float(item.get("close"))
+        except (TypeError, ValueError):
+            continue
+        if not day or close <= 0:
+            continue
+        pontos.append((day[:10], close))
+    pontos.sort(key=lambda ponto: ponto[0])
+    if len(pontos) < SERIE_MIN_PONTOS:
+        return enriquecimento_indisponivel()
+    peak = pontos[0][1]
+    drawdown = 0.0
+    for _, close in pontos:
+        peak = max(peak, close)
+        drawdown = max(drawdown, (peak - close) / peak)
+    return {
+        "drawdownHistorico": drawdown,
+        "janela": {"inicio": pontos[0][0], "fim": pontos[-1][0]},
+        "perdaEmReais": float(valor_posicao) * drawdown,
+    }
+
+
+def estimativa_investidor_por_ticker(perfil: dict[str, Any]) -> dict[str, float]:
+    """US-006: mapeia ticker -> quedaEstimadaPeloInvestidor a partir de
+    perfil-investidor.json.implicacoes[] (gravado pelo /instalar). So conta
+    item com "ticker" presente e nao-nulo (string nao-vazia) E
+    "quedaEstimadaPeloInvestidor" numerico - pergunta sem posicao concreta
+    (ticker null) e item gravado antes do campo existir (ticker ausente) nao
+    casam com nenhum ativo, nunca sao aplicados globalmente a todos os
+    achados. Ticker com mais de uma implicacao usa a mais recente por "data"
+    entre as que tem estimativa nao-nula (decisao de produto: a revisao mais
+    nova reflete melhor a visao atual do investidor que uma resposta antiga)."""
+    implicacoes = perfil.get("implicacoes")
+    if not isinstance(implicacoes, list):
+        return {}
+    escolhidas: dict[str, tuple[str, float]] = {}
+    for item in implicacoes:
+        if not isinstance(item, dict):
+            continue
+        ticker = item.get("ticker")
+        if not isinstance(ticker, str) or not ticker.strip():
+            continue
+        ticker = ticker.strip().upper()
+        queda = item.get("quedaEstimadaPeloInvestidor")
+        if not isinstance(queda, (int, float)) or isinstance(queda, bool):
+            continue
+        data = str(item.get("data") or "")
+        atual = escolhidas.get(ticker)
+        if atual is None or data > atual[0]:
+            escolhidas[ticker] = (data, float(queda))
+    return {ticker: valor for ticker, (_, valor) in escolhidas.items()}
+
+
+def enriquecimento_estimativa(drawdown: Any, estimativa: float | None) -> dict[str, Any]:
+    """US-006: confronta a queda que o investidor estimou (Passo 2 do
+    /instalar) com o drawdownHistorico MEDIDO do mesmo ticker. So inclui
+    cada campo quando o respectivo lado existe - nunca preenche o lado
+    ausente por estimativa, e nunca inventa "divergencia" faltando um dos
+    dois (AC2). Sinal de "divergencia" = drawdownHistorico - estimativa:
+    positivo => o historico foi PIOR (queda maior) do que o investidor
+    estimou; negativo => o historico foi MELHOR (queda menor) do que ele
+    temia. Motor so expõe a aritmetica; nomear a direcao ("intuicao
+    otimista"/"pessimista") e trabalho da skill, nao do achado."""
+    campos: dict[str, Any] = {}
+    if estimativa is not None:
+        campos["quedaEstimadaPeloInvestidor"] = estimativa
+    if estimativa is not None and isinstance(drawdown, (int, float)) and not isinstance(drawdown, bool):
+        campos["divergencia"] = drawdown - estimativa
+    return campos
+
+
 def as_limiar(value: Any, tipo: str, received: Any) -> float:
     try:
         number = float(value)
@@ -266,11 +399,15 @@ def find_concentracao(
     quotes: dict[str, Decimal],
     perfil: dict[str, Any],
     sem_provider: set[str],
+    history: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Devolve (achados, naoMedido). Com qualquer ticker sem cotacao, o total
     real da carteira e desconhecido - todo percentual seria chute, entao o
     tipo inteiro fica naoMedido nesta rodada em vez de medir sobre uma base
-    parcial (AC2/AC8: o motor nunca inventa achado)."""
+    parcial (AC2/AC8: o motor nunca inventa achado). "history" e so pra
+    enriquecimento (drawdownHistorico/janela/perdaEmReais) - sua ausencia
+    nunca suprime o achado, so deixa esses tres campos "indisponivel" (ver
+    docstring do modulo, distincao cotacao x serie historica)."""
     limiar, sobrescrito = resolve_limiar(perfil, "concentracao")
     limiar_decimal = decimal_exato(limiar)
     values, total, ausentes = ticker_values(positions, quotes)
@@ -278,6 +415,7 @@ def find_concentracao(
         return [], nao_medido_por_ausencia("concentracao", ausentes, sem_provider)
     if total <= 0:
         return [], []
+    estimativas = estimativa_investidor_por_ticker(perfil)
     achados: list[dict[str, Any]] = []
     for ticker in sorted(values):
         # Comparacao de fronteira em Decimal (valores ja exatos): percentual
@@ -286,6 +424,7 @@ def find_concentracao(
         percentual_decimal = values[ticker] / total
         if percentual_decimal < limiar_decimal:
             continue
+        drawdown_medidas = enriquecimento_drawdown(ticker, values[ticker], history)
         achado: dict[str, Any] = {
             "tipo": "concentracao",
             "severidade": severidade_concentracao(percentual_decimal, limiar_decimal),
@@ -294,6 +433,8 @@ def find_concentracao(
                 "valor": float(values[ticker]),
                 "percentual": float(percentual_decimal),
                 "limiar": limiar,
+                **drawdown_medidas,
+                **enriquecimento_estimativa(drawdown_medidas["drawdownHistorico"], estimativas.get(ticker)),
             },
             "licao": "concentracao-por-ativo",
         }
@@ -436,11 +577,12 @@ def build_report(
     perfil: dict[str, Any],
     sem_provider: set[str],
     alvo: dict[str, Any] | None,
+    history: dict[str, Any],
 ) -> dict[str, Any]:
     achados: list[dict[str, Any]] = []
     nao_medido: list[dict[str, Any]] = []
     concentracao_achados, concentracao_nao_medido = find_concentracao(
-        positions, quotes, perfil, sem_provider
+        positions, quotes, perfil, sem_provider, history
     )
     achados.extend(concentracao_achados)
     nao_medido.extend(concentracao_nao_medido)
@@ -453,11 +595,11 @@ def build_report(
 
 
 def main() -> None:
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 7:
         die(
             f"Uso invalido: recebido {sys.argv!r}, esperado "
             "achados-report.py <holdings.json> <quotes.json> <perfil-investidor.json> "
-            "<sem-provider.json> <alocacao-alvo.json>"
+            "<sem-provider.json> <alocacao-alvo.json> <history.json>"
         )
     # expected de validate_holding cita precoManual?/liquidez?; o de
     # load_holdings (die de path/JSON) omite ambos — mensagens historicas,
@@ -472,7 +614,8 @@ def main() -> None:
     perfil = load_perfil(sys.argv[3])
     sem_provider = load_sem_provider(sys.argv[4])
     alvo = load_alvo(sys.argv[5])
-    report = build_report(positions, quotes, perfil, sem_provider, alvo)
+    history = load_history(sys.argv[6])
+    report = build_report(positions, quotes, perfil, sem_provider, alvo, history)
     print_report(report)
 
 
