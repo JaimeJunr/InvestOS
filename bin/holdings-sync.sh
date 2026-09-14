@@ -23,6 +23,11 @@ PLAID_SECRET estiverem preenchidos no <slug>/.env. Sem credencial, usa o
 holdings.json manual. Fetch via HOLDINGS_FETCH (MCP Plaid e config declarativa,
 sem client HTTP first-party). Falha de conexao/token nao zera a carteira:
 mantem o ultimo holdings.json conhecido e avisa a idade do dado.
+Campos manuais (precoManual, liquidez) sao casados por ticker+mercado e
+preservados do local ao aplicar o payload da corretora - a corretora nunca
+os produz. Local sempre vence em conflito, e posicao ausente do payload
+novo e mantida, nunca removida silenciosamente; ambos os casos emitem
+aviso em stderr.
 EOF
 }
 
@@ -76,6 +81,60 @@ payload_tem_posicoes() {
   jq -e '.posicoes | type == "array" and length > 0' >/dev/null 2>&1 <<<"$1"
 }
 
+# Campos manuais: so o /instalar produz (posicao sem ticker cotavel, ex. Tesouro
+# Direto). Casamento por ticker+mercado (evita colisao de ticker repetido entre
+# mercados). Local sempre vence em conflito e posicao ausente do payload da
+# corretora e preservada, nunca removida silenciosamente - o script roda
+# nao-interativo (cron/CLI), entao a "pergunta ao usuario" vira aviso explicito
+# em stderr em vez de bloquear em stdin.
+CAMPOS_MANUAIS='["precoManual","liquidez"]'
+
+merge_posicoes() {
+  local local_json="$1" payload="$2"
+  jq -c -n --argjson broker "$payload" --argjson local "$local_json" --argjson campos "$CAMPOS_MANUAIS" '
+    def chave(p): (p.ticker | ascii_upcase) + "|" + (p.mercado | ascii_downcase);
+    ($local.posicoes // []) as $lp
+    | ($lp | map({(chave(.)): .}) | add // {}) as $lidx
+    | ($broker.posicoes // []) as $bp
+    | ($bp | map(chave(.))) as $bkeys
+    | ($bp | map(
+        . as $b
+        | (chave($b)) as $k
+        | ($lidx[$k]) as $l
+        | if $l == null then $b
+          else reduce $campos[] as $campo ($b;
+              if ($l | has($campo)) then . + {($campo): $l[$campo]} else . end
+            )
+          end
+      )) as $merged
+    | ($lp | map(select((chave(.)) as $k | ($bkeys | index($k)) == null))) as $orfaos
+    | {posicoes: ($merged + $orfaos)}
+  '
+}
+
+merge_warnings() {
+  local local_json="$1" payload="$2"
+  jq -r -n --argjson broker "$payload" --argjson local "$local_json" --argjson campos "$CAMPOS_MANUAIS" '
+    def chave(p): (p.ticker | ascii_upcase) + "|" + (p.mercado | ascii_downcase);
+    ($local.posicoes // []) as $lp
+    | ($lp | map({(chave(.)): .}) | add // {}) as $lidx
+    | ($broker.posicoes // []) as $bp
+    | ($bp | map(chave(.))) as $bkeys
+    | (
+        $bp[] | . as $b | (chave($b)) as $k | ($lidx[$k]) as $l
+        | select($l != null)
+        | ($campos[] as $campo
+            | select(($l | has($campo)) and ($b | has($campo)) and ($l[$campo] != $b[$campo]))
+            | "conflito em \($k): campo \($campo) local=\($l[$campo]) corretora=\($b[$campo]) - mantendo valor local"
+          )
+      ),
+      (
+        $lp[] | select((chave(.)) as $k | ($bkeys | index($k)) == null)
+        | "posicao \(.ticker)/\(.mercado) ausente no payload da corretora - mantendo posicao local"
+      )
+  '
+}
+
 fetch_holdings() {
   local slug="$1"
   if [ -z "${HOLDINGS_FETCH:-}" ]; then
@@ -114,5 +173,19 @@ if [ "$FETCH_STATUS" -ne 0 ] || ! payload_tem_posicoes "$PAYLOAD"; then
   exit 0
 fi
 
-printf '%s\n' "$PAYLOAD" | jq -c '{posicoes: .posicoes}' > "$HOLDINGS"
+BROKER_JSON=$(jq -c '{posicoes: .posicoes}' <<<"$PAYLOAD")
+if [ -f "$HOLDINGS" ]; then
+  LOCAL_JSON=$(jq -c '.' "$HOLDINGS")
+else
+  LOCAL_JSON='{"posicoes":[]}'
+fi
+
+WARNINGS=$(merge_warnings "$LOCAL_JSON" "$BROKER_JSON")
+if [ -n "$WARNINGS" ]; then
+  while IFS= read -r linha; do
+    echo "aviso: $linha" >&2
+  done <<<"$WARNINGS"
+fi
+
+merge_posicoes "$LOCAL_JSON" "$BROKER_JSON" > "$HOLDINGS"
 write_meta "$META"

@@ -195,3 +195,89 @@ EOF
   run "$ALOCACAO" acme
   [ "$status" -eq 0 ]
 }
+
+@test "sync preserva precoManual/liquidez de posicoes casadas por ticker+mercado e mantem posicao ausente do payload da corretora" {
+  seed_portfolio acme
+  write_env acme <<'EOF'
+PLAID_CLIENT_ID=id-plaid
+PLAID_SECRET=segredo-plaid
+EOF
+  python3 - acme <<'PY'
+import json, sys
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "liquidez": "D+1"},
+        {"ticker": "HGLG11", "quantidade": 50, "classe": "fiis", "mercado": "br"},
+        {"ticker": "TESOURO2029", "quantidade": 4, "classe": "renda-fixa", "mercado": "br",
+         "precoManual": 1005.74, "liquidez": "D+30"},
+    ]
+}
+with open(f"{sys.argv[1]}/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  python3 - "$WORKDIR/broker.json" <<'PY'
+import json, sys
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 120, "classe": "acoes", "mercado": "br"},
+        {"ticker": "HGLG11", "quantidade": 50, "classe": "fiis", "mercado": "br"},
+        {"ticker": "AAPL", "quantidade": 5, "classe": "acoes", "mercado": "us"},
+    ]
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  export PLAID_HOLDINGS_FIXTURE="$WORKDIR/broker.json"
+  export HOLDINGS_NOW=1000
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  assert_no_secret
+
+  # PETR4 veio atualizado da corretora (quantidade), mas o liquidez manual sobrevive.
+  jq -e '.posicoes[] | select(.ticker == "PETR4") | .quantidade == 120 and .liquidez == "D+1"' acme/holdings.json
+
+  # TESOURO2029 nao existe no payload da corretora (renda-fixa sem ticker cotavel) -
+  # precisa ser preservado, nao descartado, com precoManual e liquidez intactos.
+  jq -e '.posicoes[] | select(.ticker == "TESOURO2029") | .precoManual == 1005.74 and .liquidez == "D+30"' acme/holdings.json
+  [[ "$output" == *"TESOURO2029"* ]]
+  [[ "$output" == *"ausente"* ]]
+}
+
+@test "corretora envia precoManual conflitante - local sempre vence e conflito e avisado" {
+  seed_portfolio acme
+  write_env acme <<'EOF'
+PLAID_CLIENT_ID=id-plaid
+PLAID_SECRET=segredo-plaid
+EOF
+  python3 - acme <<'PY'
+import json, sys
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 100, "classe": "acoes", "mercado": "br", "precoManual": 10.0},
+    ]
+}
+with open(f"{sys.argv[1]}/holdings.json", "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  python3 - "$WORKDIR/broker.json" <<'PY'
+import json, sys
+payload = {
+    "posicoes": [
+        {"ticker": "PETR4", "quantidade": 120, "classe": "acoes", "mercado": "br", "precoManual": 99.0},
+    ]
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(payload, fh)
+PY
+  export PLAID_HOLDINGS_FIXTURE="$WORKDIR/broker.json"
+  export HOLDINGS_NOW=1000
+
+  run "$SCRIPT" acme
+  [ "$status" -eq 0 ]
+  assert_no_secret
+
+  jq -e '.posicoes[] | select(.ticker == "PETR4") | .precoManual == 10.0 and .quantidade == 120' acme/holdings.json
+  [[ "$output" == *"conflito"* ]]
+  [[ "$output" == *"PETR4"* ]]
+}
