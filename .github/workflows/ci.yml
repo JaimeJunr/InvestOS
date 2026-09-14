@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Cancela runs antigas do mesmo PR quando chega um push novo — a suite e barata,
+# mas nao ha razao pra manter duas rodadas concorrentes do mesmo branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # O bats do apt do Ubuntu e 1.2.x; tests/achados.bats e tests/risco.bats
+      # declaram `bats_require_minimum_version 1.5.0` e usam `run --separate-stderr`,
+      # que so existe a partir do 1.5. Versao pinada pra manter o CI deterministico.
+      #
+      # Instalador oficial com prefixo em $HOME, nao `npm install -g`: o npm global
+      # do runner falha com EACCES ao criar /usr/local/share/man/man7 (as man pages
+      # do bats), e resolver isso com sudo seria privilegio desnecessario pra um
+      # gate de teste.
+      - name: Instala bats 1.10.0
+        run: |
+          git clone --depth 1 --branch v1.10.0 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
+          "$RUNNER_TEMP/bats-core/install.sh" "$HOME/.local"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Versoes
+        run: |
+          bash --version | head -1
+          python3 --version
+          jq --version
+          bats --version
+
+      # Os gates abaixo estao na ordem do mais barato pro mais caro: sintaxe falha
+      # em segundos e derruba a run antes de gastar os 305 testes.
+      # Este projeto nao tem build step nem linter instalado; estes sao os gates
+      # substitutos documentados no CLAUDE.md.
+
+      - name: Sintaxe dos scripts bash
+        run: |
+          fail=0
+          for f in bin/*.sh tests/helpers/*.sh; do
+            bash -n "$f" || { echo "::error file=$f::erro de sintaxe em $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Compilacao dos scripts python
+        run: |
+          fail=0
+          for f in bin/*.py; do
+            python3 -m py_compile "$f" || { echo "::error file=$f::erro de compilacao em $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: JSON versionado e valido
+        run: jq empty catalog.json
+
+      # A suite e offline por construcao: os scripts que buscam dado externo aceitam
+      # override injetavel (ALOCACAO_QUOTE, RISCO_HISTORY, HOLDINGS_FETCH, ...) e os
+      # testes injetam os fakes de tests/helpers/. Nenhum teste toca a rede — se um
+      # dia um tocar, vai falhar aqui em vez de ficar flaky em producao.
+      - name: Suite bats
+        run: bats --print-output-on-failure tests/*.bats
